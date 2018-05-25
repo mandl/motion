@@ -1,0 +1,48 @@
+
+<div class="container-fluid">
+<br>
+<button type="button" id="deleteAll" class="btn btn-outline-primary">Delete all</button>
+<button type="button" id="test" class="btn btn-outline-primary">Test</button>
+<button type="button" id="test2" class="btn btn-outline-primary">Test 2</button>
+<br>
+</div>
+<div class="container-fluid">
+  <h2>Motion Gallery</h2>
+  <p>This is my motion.</p>
+  <div class="row">
+  {{#each fileNames.data}}
+    <div class="col-md-4">
+      <div class="thumbnail">
+        <a href="/picture/motion/{{name}}" target="_blank">
+          <img src="/picture/motion/{{name}}" alt="Lights" style="width:100%">
+          <div class="caption">
+            <p>{{name}}</p>
+          </div>
+        </a>
+      </div>
+    </div>
+   {{/each}}
+  </div>
+</div>
+
+
+{{#section 'jquery'}}
+<script type="text/javascript">
+ $(document).ready(function() {
+	 
+   $("#deleteAll").on( "click", function() {
+	   $.get( "clearPicture", function( data ) {
+
+           console.log(data);
+           location.reload();
+         });
+     
+    });
+    $.each($('#navbarNav').find('li'), function() {
+        $(this).toggleClass('active',
+            '/' + $(this).find('a').attr('href') == window.location.pathname);
+    });
+    
+  });
+</script>
+{{/section}}
