@@ -28,6 +28,7 @@ const jsonBody = require('body/json');
 const Rest = require('connect-rest');
 const bodyParser = require('body-parser');
 const logger = require('./logger');
+const { spawn } = require('child_process');
 
 var handlebars = require('express-handlebars')
 .create({
@@ -48,10 +49,7 @@ var handlebars = require('express-handlebars')
     }
 });
 
-
 const pnpFolder = path.join(__dirname ,'picture');
-
-
 
 // Configure the local strategy for use by Passport.
 //
@@ -94,9 +92,6 @@ passport.deserializeUser(function(id, cb) {
 	});
 });
 
-
-
-
 // Create a new Express application.
 var app = express();
 
@@ -133,14 +128,14 @@ app.get('/login', function(req, res) {
 	 res.sendFile(path.join(__dirname, '/public/login.html'));
 });
 
-
-
+// main page
 app.get('/', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
-
-	res.render('live', { layout:'main', title: 'Lieve view'});
+	
+	res.render('live', { layout:'main', title: 'Live view'});
+	child.stdin.write('r');
 });
 
-
+// render motion
 app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	var files = fs.readdirSync(__dirname+ '/picture/motion');
 	var motionFiles = {"data":[]};;
@@ -151,11 +146,11 @@ app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(re
 	}	
 	
 	//console.log(motionFiles);
-	res.render('motion', { layout:'main', title: 'Webcam remote',fileNames:motionFiles});
+	res.render('motion', { layout:'main', title: 'Motion',fileNames:motionFiles});
 });
 
 
-
+// Clear all pictures
 app.get('/clearPicture', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	
 	try {
@@ -177,16 +172,16 @@ app.get('/clearPicture', require('connect-ensure-login').ensureLoggedIn(), funct
 	res.end();		
 });
 
+// save new ROI
 app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
-	
-	
+		
 	var startX = req.query.startX;
 	var startY = req.query.startY;
 	var w = req.query.w;
 	var h = req.query.h;
+	console.log(startX,startY,w,h); 
+	child.stdin.write(startX + ',' + startY + ',' + w + ',' + h);
 	res.send('ok');
-	
-
 	res.end();		
 });
 
@@ -198,13 +193,11 @@ app.post('/login', passport.authenticate('local', {
 	res.redirect('/');
 });
 
-
+// logout from server
 app.get('/logout', function(req, res) {
 	req.logout();
 	res.redirect('/');
 });
-
-
 
 // Handle 404
 app.use(function(req, res, next) {
@@ -213,7 +206,21 @@ app.use(function(req, res, next) {
 });
 
 app.listen(3000, function () {
-	  logger.info('Heizung listening on port 3000!');
+	  logger.info('Motion listening on port 3000!');
 });
 
+// start motion.py
+child = spawn('python3', ['motion.py']);
 
+child.stdout.on('data', (data) => {
+	  console.log(`child stdout: ${data}`);
+});
+
+child.stderr.on('data', (data) => {
+  console.log(`child stderr: ${data}`);
+});
+//py.stdout.on('end', function(){
+//  console.log('Sum of numbers=',dataString);
+//});
+//py.stdin.write(JSON.stringify(data));
+//py.stdin.end();

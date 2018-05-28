@@ -38,10 +38,7 @@ const logger = createLogger({
 	  ),
 	  transports: [
 	 	    new transports.File({ filename: logFolder+ '/temp.log' })
-	  ],
-      exceptionHandlers: [
-            new transports.File({ filename: logFolder+ + '/exceptions.log' })
-      ]      
+	  ]
 	});
 
 module.exports = logger;

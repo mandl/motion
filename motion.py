@@ -8,6 +8,8 @@ import datetime
 import argparse
 import time
 import os
+import select
+import sys
 
 from picamera.array import PiRGBArray
 from picamera import PiCamera
@@ -15,11 +17,11 @@ import cv2
 
 
 
-def annotate_frame(frame, contour):
+def annotate_frame(frame, contour,offsetX,offsetY):
     timestamp = datetime.datetime.now()
     ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
     (x, y, w, h) = cv2.boundingRect(contour)
-    cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
+    cv2.rectangle(frame, ( offsetX + x, offsetY + y), (offsetX + x + w, offsetY + y + h), (255, 255, 255), 2)
     #cv2.putText(frame, ts, (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
     return frame
 
@@ -38,21 +40,41 @@ def loop(args, camera):
     raw_capture = PiRGBArray(camera, size=args.resolution)
     log.info("Starting capture")
     testFrame = True
+    # 317 367 948 351
+    x = 317
+    y = 367
+    
+    w = 948
+    h = 351
+    
+    x1 = x
+    y1 = y
+    x2 = x + w 
+    y2 = y + h
 
     for f in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True):
         frame = f.array
         if testFrame == True:
             img_test_path = '{}/{}/{}'.format(args.image_path,'config', 'atest.jpg')
             img_test_path2 = '{}/{}/{}'.format(args.image_path,'config', 'test.jpg')
-            ball = frame[1:100, 1:200]
-            cv2.imwrite(img_test_path2, ball)
+            # 735 677 408 227
+            ball = frame[y1:y2,x1:x2]
+            #cv2.imwrite(frame, ball)
+            # mark roi
+            cv2.rectangle(frame, ( x, y), (x + w, y + h), (255, 0, 0), 2)
             cv2.imwrite(img_test_path, frame)
             testFrame = False
         # resize, grayscale & blur out noise
         # numpy syntax expects [y:y+h, x:x+w]
-      
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frameRoi = frame[y1:y2,x1:x2]
+        gray = cv2.cvtColor(frameRoi, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
+        
+        controlChar = GetChar()
+        if controlChar != None:
+            if controlChar == 'r':
+                testFrame = True
+            log.info(controlChar)
 
         # if the average frame is None, initialize it
         if avg is None:
@@ -85,7 +107,7 @@ def loop(args, camera):
 
             # draw the text and timestamp on the frame
             #if args.enable_annotate:
-            frame = annotate_frame(frame, c)
+            frame = annotate_frame(frame, c,x,y)
 
 
         if motion:
@@ -99,9 +121,12 @@ def loop(args, camera):
       
 
 
-def str2bool(v):
-    return v.lower() in ("yes", "true", "t", "1")
 
+
+def GetChar():
+  if select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], []):
+    return sys.stdin.read(1)
+    return None
 
 def parse_res(v):
     x, y = v.lower().split('x')
@@ -109,13 +134,17 @@ def parse_res(v):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Motion detect')
-    parser.add_argument('--resolution', help='e.g 640x480', default=parse_res(os.environ.get('resolution', '1280x720')))
-    parser.add_argument('--fps', help='Framerate e.g: 18', default=int(os.environ.get('fps', '18')))
-    parser.add_argument('--delta-threshold', default=int(os.environ.get('delta_threshold', 5)))
-    parser.add_argument('--min-area', default=int(os.environ.get('min_area', 5000)))
-    parser.add_argument('--enable-annotate', help='Draw detected regions to image', action='store_true', default=str2bool(os.environ.get('enable_annotate', '0')))
-    parser.add_argument('--image-path', help='Where to save images locally eg /tmp', default=os.environ.get('image_path', '/media'))
- 
+    parser.add_argument('--resolution', help='e.g 640x480', default=parse_res('1280x720'))
+    parser.add_argument('--fps', help='Framerate e.g: 18', default=int('18'))
+    parser.add_argument('--delta-threshold', default=int(5))
+    parser.add_argument('--enable-annotate', help='Draw detected regions to image', action='store_true', default=True)
+    parser.add_argument('--image-path', help='Where to save images locally eg /tmp', default='/media')
+    parser.add_argument('--min-area', default=int(5000))
+    
     args = parser.parse_args()
     log.debug(args)
+    
+   
+
+        
     start(args)
