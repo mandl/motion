@@ -17,7 +17,7 @@ var imageObj = null;
 function init() {
     imageObj = new Image();
     imageObj.onload = function () { ctx.drawImage(imageObj, 0, 0); };
-    imageObj.src = '/picture/config/atest.jpg';
+    imageObj.src = '/picture/config/viewLive.jpg';
     canvas.addEventListener('mousedown', mouseDown, false);
     canvas.addEventListener('mouseup', mouseUp, false);
     canvas.addEventListener('mousemove', mouseMove, false);
@@ -54,6 +54,8 @@ init();
             
           
             console.log(data);
+            location.reload();
+            
           });
        
     });

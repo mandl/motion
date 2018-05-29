@@ -132,7 +132,7 @@ app.get('/login', function(req, res) {
 app.get('/', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	
 	res.render('live', { layout:'main', title: 'Live view'});
-	child.stdin.write('r');
+	child.stdin.write('reload\n');
 });
 
 // render motion
@@ -179,8 +179,12 @@ app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req,
 	var startY = req.query.startY;
 	var w = req.query.w;
 	var h = req.query.h;
-	console.log(startX,startY,w,h); 
-	child.stdin.write(startX + ',' + startY + ',' + w + ',' + h);
+	
+	if ((startX != null) && (startY != null) && (w != null) && ( h != null))
+	{
+		console.log(startX,startY,w,h); 
+		child.stdin.write('roi,' + startX + ',' + startY + ',' + w + ',' + h +'\n');
+	}
 	res.send('ok');
 	res.end();		
 });
@@ -210,7 +214,8 @@ app.listen(3000, function () {
 });
 
 // start motion.py
-child = spawn('python3', ['motion.py']);
+child = spawn('python3', ['-u','motion.py']);
+//child = spawn('python3', ['motion.py']);
 
 child.stdout.on('data', (data) => {
 	  console.log(`child stdout: ${data}`);

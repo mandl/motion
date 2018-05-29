@@ -2,7 +2,7 @@
 # Designed to run on a Raspberry Pi 3
 
 import logging
-logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO)
 log = logging.getLogger('')
 import datetime
 import argparse
@@ -10,18 +10,48 @@ import time
 import os
 import select
 import sys
+import fcntl
+import selectors
 
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import cv2
 
 
+class ConfigData:
+    
+    def __init__(self):
+        self.x = 317
+        self.y = 367
+        
+        self.updateROI = True
+        self.reloadView = False
+        
+        self.liveView_path = '{}/{}/{}'.format('/media','config', 'viewLive.jpg')
+        self.roiView_path = '{}/{}/{}'.format('/media','config', 'roi.jpg')
+       
+        self.w = 948
+        self.h = 351
+        
+        self.update()
+        
+    def update(self):
+        self.x1 = self.x
+        self.y1 = self.y
+        self.x2 = self.x + self.w 
+        self.y2 = self.y + self.h
+    
+    def log(self):
+        log.info('Data: x {} y {} w {} h {}'.format(self.x,self.y,self.w,self.h))
+        
+
+myData = ConfigData()
 
 def annotate_frame(frame, contour,offsetX,offsetY):
     timestamp = datetime.datetime.now()
     ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
     (x, y, w, h) = cv2.boundingRect(contour)
-    cv2.rectangle(frame, ( offsetX + x, offsetY + y), (offsetX + x + w, offsetY + y + h), (255, 255, 255), 2)
+    cv2.rectangle(frame, ( offsetX + x, offsetY + y), (offsetX + x + w, offsetY + y + h), (255, 255, 255), 1)
     #cv2.putText(frame, ts, (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
     return frame
 
@@ -34,48 +64,38 @@ def start(args):
     time.sleep(5)
     loop(args, camera)
 
-
 def loop(args, camera):
     avg = None
     raw_capture = PiRGBArray(camera, size=args.resolution)
     log.info("Starting capture")
-    testFrame = True
-    # 317 367 948 351
-    x = 317
-    y = 367
+    global myData
+    myData.log()
     
-    w = 948
-    h = 351
-    
-    x1 = x
-    y1 = y
-    x2 = x + w 
-    y2 = y + h
-
     for f in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True):
         frame = f.array
-        if testFrame == True:
-            img_test_path = '{}/{}/{}'.format(args.image_path,'config', 'atest.jpg')
-            img_test_path2 = '{}/{}/{}'.format(args.image_path,'config', 'test.jpg')
-            # 735 677 408 227
-            ball = frame[y1:y2,x1:x2]
-            #cv2.imwrite(frame, ball)
-            # mark roi
-            cv2.rectangle(frame, ( x, y), (x + w, y + h), (255, 0, 0), 2)
-            cv2.imwrite(img_test_path, frame)
-            testFrame = False
+        
+        if myData.reloadView == True:
+            log.info("Reload view")
+            cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
+            cv2.imwrite(myData.liveView_path, frame)
+            myData.reloadView = False
+            
+        if myData.updateROI == True:
+            log.info("Update ROI")
+            frameRoiView = frame[myData.y1:myData.y2,myData.x1:myData.x2]
+            cv2.imwrite(myData.roiView_path, frameRoiView)
+            avg = None
+            myData.updateROI = False
         # resize, grayscale & blur out noise
         # numpy syntax expects [y:y+h, x:x+w]
-        frameRoi = frame[y1:y2,x1:x2]
+        frameRoi = frame[myData.y1:myData.y2,myData.x1:myData.x2]
         gray = cv2.cvtColor(frameRoi, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
         
-        controlChar = GetChar()
-        if controlChar != None:
-            if controlChar == 'r':
-                testFrame = True
-            log.info(controlChar)
-
+        for k, mask in m_selector.select(timeout=0):
+            callback = k.data
+            callback(k.fileobj,mask)
+        
         # if the average frame is None, initialize it
         if avg is None:
             log.info("Initialising average frame")
@@ -104,11 +124,9 @@ def loop(args, camera):
             motion = True
             log.info("Motion detected")
             
-
             # draw the text and timestamp on the frame
             #if args.enable_annotate:
-            frame = annotate_frame(frame, c,x,y)
-
+            frame = annotate_frame(frame, c,myData.x,myData.y)
 
         if motion:
             img_name = datetime.datetime.today().strftime('%Y-%m-%d_%H_%M_%S.%f') + '.jpg'
@@ -120,13 +138,30 @@ def loop(args, camera):
         motion = False
       
 
+# function to be called when enter is pressed
+def got_keyboard_data(stdin,mask):
+   
+    strCommmand = stdin.readline().rstrip()
+    
+    log.info('Keyboard input: {}'.format(strCommmand))
+    if strCommmand == 'reload':
+        # load new picture
+        myData.reloadView = True
+    elif strCommmand.startswith('roi'):
+        command,x,y,w,h = strCommmand.split(',')
+        myData.x = int(x) 
+        myData.y = int(y) 
+        myData.w = int(w) 
+        myData.h = int(h)
+        myData.updateROI = True
+        myData.update()
+        myData.log()
+        
 
+# register event
+m_selector = selectors.DefaultSelector()
+m_selector.register(sys.stdin, selectors.EVENT_READ, got_keyboard_data)
 
-
-def GetChar():
-  if select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], []):
-    return sys.stdin.read(1)
-    return None
 
 def parse_res(v):
     x, y = v.lower().split('x')
@@ -142,9 +177,5 @@ if __name__ == '__main__':
     parser.add_argument('--min-area', default=int(5000))
     
     args = parser.parse_args()
-    log.debug(args)
-    
-   
-
-        
+    log.debug(args)  
     start(args)
