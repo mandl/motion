@@ -30,6 +30,8 @@ const bodyParser = require('body-parser');
 const logger = require('./logger');
 const { spawn } = require('child_process');
 
+
+
 var handlebars = require('express-handlebars')
 .create({
     defaultLayout: 'main',
@@ -41,10 +43,11 @@ var handlebars = require('express-handlebars')
             this._sections[name] = options.fn(this);
             return null;
         },
+        //2018-05-30_17_15_53.396682.jpg
         formatTimeTwc:function(strTime) {
         	strTime = strTime.toString();
             // 2018-05-19T20:00:00+0200
-            return strTime.substr(11,8);
+            return strTime.substr(0,9) + '    ' + strTime.substr(11,8).replace(/_/g, ':') ;
         }
     }
 });
@@ -108,7 +111,6 @@ app.use(require('express-session')({
 	saveUninitialized : false
 }));
 
-app.use(bodyParser.raw( {inflate:false, limit:'10mb', type:'image/jpeg'} ));
 
 // Initialize Passport and restore authentication state, if any, from the
 // session.
@@ -116,8 +118,12 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // static routes
-app.use(express.static(__dirname+'/public'));
-app.use('/picture',require('connect-ensure-login').ensureLoggedIn(),express.static(__dirname + '/picture'))
+
+
+//app.use(express.static(__dirname+'/public',{ maxAge: '30 days' }));
+
+
+app.use('/picture',require('connect-ensure-login').ensureLoggedIn(),express.static(__dirname + '/picture',{ maxAge: '30 days' }))
 
 // view engine
 app.engine('handlebars', handlebars.engine);
@@ -125,19 +131,29 @@ app.set('view engine', 'handlebars');
 
 
 app.get('/login', function(req, res) {
-	 res.sendFile(path.join(__dirname, '/public/login.html'));
+	 res.sendFile(path.join(__dirname, 'public','login.html'));
 });
 
-// main page
+// renter main page
 app.get('/', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	
 	res.render('live', { layout:'main', title: 'Live view'});
 	child.stdin.write('reload\n');
 });
 
-// render motion
+//renter log page
+app.get('/log', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+	var logtext = fs.readFileSync(path.join(__dirname, 'temp.log'),'utf8')
+	
+	logtext = logtext.replace(/\n/g,'<br>');
+
+	res.render('logfile', { layout:'main', title: 'Log', logdata:logtext});
+
+});
+
+// render motion page
 app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
-	var files = fs.readdirSync(__dirname+ '/picture/motion');
+	var files = fs.readdirSync(path.join(__dirname,'/picture','motion'));
 	var motionFiles = {"data":[]};;
 	for( i in files)
 	{
@@ -154,13 +170,11 @@ app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(re
 app.get('/clearPicture', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	
 	try {
-	fs.readdir(__dirname+ '/picture/motion', (err, files) => {
+	fs.readdir(path.join(__dirname,'picture','motion'), (err, files) => {
 		  if (err) throw err;
 
 		  for (const file of files) {
-		    fs.unlink(path.join(__dirname+ '/picture/motion', file), err => {
-		      if (err) throw err;
-		    });
+		    fs.unlinkSync(path.join(__dirname, 'picture','motion', file));
 		  }
 		});
 	} 
@@ -190,6 +204,14 @@ app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req,
 });
 
 
+//save new ROI
+app.get('/deleteLog', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+	
+	fs.writeFileSync(path.join(__dirname,'temp.log'),"");
+	res.send('ok');
+	res.end();		
+});
+
 // Login
 app.post('/login', passport.authenticate('local', {
 	failureRedirect : '/login'
@@ -213,6 +235,10 @@ app.listen(3000, function () {
 	  logger.info('Motion listening on port 3000!');
 });
 
+process.on('exit', function(code) {
+	child.kill('SIGHUP')
+});
+
 // start motion.py
 child = spawn('python3', ['-u','motion.py']);
 //child = spawn('python3', ['motion.py']);
@@ -223,6 +249,7 @@ child.stdout.on('data', (data) => {
 
 child.stderr.on('data', (data) => {
   console.log(`child stderr: ${data}`);
+  logger.info(data);
 });
 //py.stdout.on('end', function(){
 //  console.log('Sum of numbers=',dataString);

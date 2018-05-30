@@ -2,7 +2,7 @@
 # Designed to run on a Raspberry Pi 3
 
 import logging
-logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(message)s', level=logging.INFO)
 log = logging.getLogger('')
 import datetime
 import argparse
@@ -12,7 +12,7 @@ import select
 import sys
 import fcntl
 import selectors
-
+import json
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import cv2
@@ -47,16 +47,32 @@ class ConfigData:
 
 myData = ConfigData()
 
-def annotate_frame(frame, contour,offsetX,offsetY):
+def annotate_frame(frame, area, contour,offsetX,offsetY):
     timestamp = datetime.datetime.now()
     ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
     (x, y, w, h) = cv2.boundingRect(contour)
+    # show ROI
+    cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
+    
+    # show motion
     cv2.rectangle(frame, ( offsetX + x, offsetY + y), (offsetX + x + w, offsetY + y + h), (255, 255, 255), 1)
-    #cv2.putText(frame, ts, (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
+    
+    cv2.putText(frame, str(area), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
     return frame
 
 
 def start(args):
+    
+    with open('config.json', 'r') as f:
+        config = json.load(f)
+
+        myData.x = config['CAM1']['x']
+        myData.y = config['CAM1']['y']
+        myData.w = config['CAM1']['w']
+        myData.h = config['CAM1']['h']
+        myData.update()
+        
+    
     camera = PiCamera()
     camera.resolution = args.resolution
     camera.framerate = args.fps
@@ -70,6 +86,7 @@ def loop(args, camera):
     log.info("Starting capture")
     global myData
     myData.log()
+    timestampLast =  time.perf_counter()
     
     for f in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True):
         frame = f.array
@@ -114,24 +131,33 @@ def loop(args, camera):
         thresh = cv2.threshold(frame_delta, args.delta_threshold, 255, cv2.THRESH_BINARY)[1]
         thresh = cv2.dilate(thresh, None, iterations=2)
         (img,contours, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
+       
+        
         motion = False
         for c in contours:
             # if the contour is too small, ignore it
-            if cv2.contourArea(c) < args.min_area:
+            area =  cv2.contourArea(c)
+            if area < args.min_area:
                 continue
 
             motion = True
-            log.info("Motion detected")
+            
+            log.info("Motion detected  Area={}".format(area))
             
             # draw the text and timestamp on the frame
             #if args.enable_annotate:
-            frame = annotate_frame(frame, c,myData.x,myData.y)
+            frame = annotate_frame( frame, area, c, myData.x, myData.y)
 
         if motion:
-            img_name = datetime.datetime.today().strftime('%Y-%m-%d_%H_%M_%S.%f') + '.jpg'
-            img_path = '{}/{}/{}'.format(args.image_path,"motion", img_name)
-            cv2.imwrite(img_path, frame)
+            timestampNow =  time.perf_counter() 
+            timediff = timestampNow - timestampLast
+            log.info("Motion time {} ".format(timediff))
+            if timediff >= 1:
+                timestampLast = timestampNow
+                img_name = datetime.datetime.today().strftime('%Y-%m-%d_%H_%M_%S.%f') + '.jpg'
+                img_path = '{}/{}/{}'.format(args.image_path,"motion", img_name)
+                log.info("Save picture {}".format(img_name))
+                cv2.imwrite(img_path, frame)
             
 
         raw_capture.truncate(0)
@@ -156,6 +182,15 @@ def got_keyboard_data(stdin,mask):
         myData.updateROI = True
         myData.update()
         myData.log()
+        with open('config.json', 'r') as f:
+            config = json.load(f)
+
+            config['CAM1']['x'] = myData.x
+            config['CAM1']['y'] = myData.y
+            config['CAM1']['w'] = myData.w
+            config['CAM1']['h'] = myData.h
+            with open('config.json', 'w') as f2:
+                json.dump(config, f2,indent=4, sort_keys=True, separators=(',', ': '), ensure_ascii=False)
         
 
 # register event
