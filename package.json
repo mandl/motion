@@ -1,0 +1,42 @@
+{
+  "name": "MotionWeb",
+  "version": "0.0.1",
+  "description": "Motion control.",
+  "keywords": [
+    "IOT",
+    "express",
+    "heater"
+  ],
+  "author": "Stefan Mandl",
+  "license": "GPL-3.0",
+  "homepage": "https://github.com/mandl/motion",
+  "repository": {
+    "type": "https",
+    "url": "https://github.com/mandl/motion.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mandl/motion/issues"
+  },
+  "scripts": {
+    "build-1": "browserify -r ./app/models/tempstation.js:Temp -r ./app/views/stationview.js:View  -o public/js/bundle2.js",
+    "build-2": "browserify -r ./app/models/heizung.js:Heizung -r ./app/views/heizungview.js:HeizungView -o public/js/main.js"
+  },
+  "dependencies": {
+    "backbone": "^1.3.3",
+    "body": "^5.1.0",
+    "body-parser": "^1.18.3",
+    "connect-ensure-login": "^0.1.1",
+    "connect-rest": "^3.0.16",
+    "cookie-parser": "^1.3.5",
+    "express": "^4.16.3",
+    "express-handlebars": "^3.0.0",
+    "express-session": "^1.11.3",
+    "jquery": "^3.3.1",
+    "mathjs": "^4.4.1",
+    "morgan": "^1.6.1",
+    "passport": "^0.2.2",
+    "passport-local": "^1.0.0",
+    "request": "^2.86.0",
+    "winston": "^3.0.0-rc6"
+  }
+}

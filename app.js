@@ -46,13 +46,12 @@ var handlebars = require('express-handlebars')
         //2018-05-30_17_15_53.396682.jpg
         formatTimeTwc:function(strTime) {
         	strTime = strTime.toString();
-            // 2018-05-19T20:00:00+0200
             return strTime.substr(0,9) + '    ' + strTime.substr(11,8).replace(/_/g, ':') ;
         }
     }
 });
 
-const pnpFolder = path.join(__dirname ,'picture');
+
 
 // Configure the local strategy for use by Passport.
 //
@@ -118,9 +117,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // static routes
-
-
-//app.use(express.static(__dirname+'/public',{ maxAge: '30 days' }));
 
 
 app.use('/picture',require('connect-ensure-login').ensureLoggedIn(),express.static(__dirname + '/picture',{ maxAge: '30 days' }))
@@ -204,7 +200,7 @@ app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req,
 });
 
 
-//save new ROI
+// delete log
 app.get('/deleteLog', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	
 	fs.writeFileSync(path.join(__dirname,'temp.log'),"");
@@ -251,8 +247,4 @@ child.stderr.on('data', (data) => {
   console.log(`child stderr: ${data}`);
   logger.info(data);
 });
-//py.stdout.on('end', function(){
-//  console.log('Sum of numbers=',dataString);
-//});
-//py.stdin.write(JSON.stringify(data));
-//py.stdin.end();
+
