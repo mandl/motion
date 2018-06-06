@@ -132,9 +132,12 @@ app.get('/login', function(req, res) {
 
 // renter main page
 app.get('/', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
-	
-	res.render('live', { layout:'main', title: 'Live view'});
 	child.stdin.write('reload\n');
+	setTimeout(function(){
+		
+		res.render('live', { layout:'main', title: 'Live view'});
+		  
+		}, 2 * 1000);
 });
 
 //renter log page
@@ -149,11 +152,11 @@ app.get('/log', require('connect-ensure-login').ensureLoggedIn(), function(req, 
 
 // render motion page
 app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
-	var files = fs.readdirSync(path.join(__dirname,'/picture','motion'));
-	var motionFiles = {"data":[]};;
+	var files = fs.readdirSync(path.join(__dirname,'picture','motion','2018-06-06'));
+	var motionFiles = {"data":[]};
 	for( i in files)
 	{
-		var me = {"name":files[i],"date":""};
+		var me = {"name":files[i],"folder":"2018-06-06"};
 		motionFiles.data.push(me);
 	}	
 	
@@ -162,15 +165,16 @@ app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(re
 });
 
 
+
 // Clear all pictures
 app.get('/clearPicture', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	
 	try {
-	fs.readdir(path.join(__dirname,'picture','motion'), (err, files) => {
+	fs.readdir(path.join(__dirname,'picture','motion','2018-06-06'), (err, files) => {
 		  if (err) throw err;
 
 		  for (const file of files) {
-		    fs.unlinkSync(path.join(__dirname, 'picture','motion', file));
+		    fs.unlinkSync(path.join(__dirname, 'picture','motion','2018-06-06', file));
 		  }
 		});
 	} 
@@ -178,10 +182,28 @@ app.get('/clearPicture', require('connect-ensure-login').ensureLoggedIn(), funct
 		console.log(ex);
 		
 	}
-	res.send('ok');
-	res.end();		
+	setTimeout(function(){
+		
+		res.send('ok');
+		res.end();	
+		  
+	}, 10 * 1000);
+		
 });
 
+//render motion page
+app.get('/motiondays', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+	var files = fs.readdirSync(path.join(__dirname,'picture','motion'));
+	var motionFiles = {"data":[]};
+	for( i in files)
+	{
+		var me = {"name":files[i]};
+		motionFiles.data.push(me);
+	}	
+	
+	//console.log(motionFiles);
+	res.render('motiondays', { layout:'main', title: 'Days',fileNames:motionFiles});
+});
 // save new ROI
 app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 		
@@ -240,11 +262,18 @@ child = spawn('python3', ['-u','motion.py']);
 //child = spawn('python3', ['motion.py']);
 
 child.stdout.on('data', (data) => {
-	  console.log(`child stdout: ${data}`);
+	strData = data.toString('utf8');
+	strData = strData.trim();
+	console.log(`child stdout: ${strData}`);
+	logger.info(strData);
 });
 
 child.stderr.on('data', (data) => {
-  console.log(`child stderr: ${data}`);
-  logger.info(data);
+  strData = data.toString('utf8');
+  strData = strData.trim();
+  
+  console.log(`child stderr: ${strData}`);
+  
+  logger.info(strData);
 });
 

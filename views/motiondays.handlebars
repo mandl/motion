@@ -6,22 +6,13 @@
 <br>
 </div>
 <div class="container-fluid">
-  <h2>Motion Gallery</h2>
-  <p>This is my motion.</p>
-  <div class="row">
+
+  <p>Folders.</p>
+
   {{#each fileNames.data}}
-    <div class="col-md-4">
-      <div class="thumbnail">
-        <a href="/picture/motion/{{folder}}/{{name}}" target="_blank">
-          <img src="/picture/motion/{{folder}}/{{name}}" alt="Lights" style="width:100%">
-          <div class="caption">
-            <p>{{formatTimeTwc name}}</p>
-          </div>
-        </a>
-      </div>
-    </div>
-   {{/each}}
-  </div>
+  <button type="button" class="btn btn-primary">{{name}}</button>
+  {{/each}}
+
 </div>
 
 
@@ -30,11 +21,7 @@
  $(document).ready(function() {
 	 
    $("#deleteAll").on( "click", function() {
-	   $.get( "clearPicture", function( data ) {
 
-           console.log(data);
-           location.reload();
-         });
      
     });
     $.each($('#navbarNav').find('li'), function() {

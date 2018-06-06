@@ -27,11 +27,14 @@ class ConfigData:
         self.updateROI = True
         self.reloadView = False
         
-        self.liveView_path = '{}/{}/{}'.format('/media','config', 'viewLive.jpg')
-        self.roiView_path = '{}/{}/{}'.format('/media','config', 'roi.jpg')
+        self.liveView_path = '/{}/{}/{}'.format('media','config', 'viewLive.jpg')
+        self.roiView_path = '/{}/{}/{}'.format('media','config', 'roi.jpg')
+        self.img_path = '/{}/{}'.format('media','motion')
        
         self.w = 948
         self.h = 351
+        
+        self.startTime =datetime.datetime.now()
         
         self.update()
         
@@ -63,6 +66,8 @@ def annotate_frame(frame, area, contour,offsetX,offsetY):
 
 def start(args):
     
+    
+    
     with open('config.json', 'r') as f:
         config = json.load(f)
 
@@ -72,7 +77,7 @@ def start(args):
         myData.h = config['CAM1']['h']
         myData.update()
         
-    
+
     camera = PiCamera()
     camera.resolution = args.resolution
     camera.framerate = args.fps
@@ -155,7 +160,10 @@ def loop(args, camera):
             if timediff >= 1:
                 timestampLast = timestampNow
                 img_name = datetime.datetime.today().strftime('%Y-%m-%d_%H_%M_%S.%f') + '.jpg'
-                img_path = '{}/{}/{}'.format(args.image_path,"motion", img_name)
+                myFolder = myData.img_path +"/" + myData.startTime.strftime('%Y-%m-%d')
+                if not os.path.isdir(myFolder):
+                    os.makedirs(myFolder)
+                img_path = '{}/{}'.format(myFolder, img_name)
                 log.info("Save picture {}".format(img_name))
                 cv2.imwrite(img_path, frame)
             
@@ -184,7 +192,6 @@ def got_keyboard_data(stdin,mask):
         myData.log()
         with open('config.json', 'r') as f:
             config = json.load(f)
-
             config['CAM1']['x'] = myData.x
             config['CAM1']['y'] = myData.y
             config['CAM1']['w'] = myData.w
@@ -208,7 +215,6 @@ if __name__ == '__main__':
     parser.add_argument('--fps', help='Framerate e.g: 18', default=int('18'))
     parser.add_argument('--delta-threshold', default=int(5))
     parser.add_argument('--enable-annotate', help='Draw detected regions to image', action='store_true', default=True)
-    parser.add_argument('--image-path', help='Where to save images locally eg /tmp', default='/media')
     parser.add_argument('--min-area', default=int(5000))
     
     args = parser.parse_args()
