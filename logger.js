@@ -21,11 +21,15 @@ const { combine, timestamp, label, prettyPrint,printf } = format;
 
 const path = require('path');
 
-const logFolder = path.join(__dirname );
+const logFolder = path.join('/media','motion.log');
 
 const myFormat = printf(info => {
 	  return `${info.timestamp} ${info.level}: ${info.message}`;
 	});
+
+var getLogFolder = function() {
+	return logFolder;
+}
 
 const logger = createLogger({
 	  level: 'debug',
@@ -37,8 +41,10 @@ const logger = createLogger({
 		        myFormat
 	  ),
 	  transports: [
-	 	    new transports.File({ filename: logFolder+ '/temp.log' })
+	 	    new transports.File({ filename: logFolder})
 	  ]
 	});
 
-module.exports = logger;
+
+exports.logfolder = getLogFolder;
+exports.logger = logger;

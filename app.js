@@ -27,7 +27,8 @@ const db = require('./db');
 const jsonBody = require('body/json');
 const Rest = require('connect-rest');
 const bodyParser = require('body-parser');
-const logger = require('./logger');
+const { logger, logfolder} = require('./logger');
+//const logger = require('./logger').logger;
 const { spawn } = require('child_process');
 
 
@@ -142,7 +143,7 @@ app.get('/', require('connect-ensure-login').ensureLoggedIn(), function(req, res
 
 //renter log page
 app.get('/log', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
-	var logtext = fs.readFileSync(path.join(__dirname, 'temp.log'),'utf8')
+	var logtext = fs.readFileSync(logfolder(),'utf8')
 	
 	logtext = logtext.replace(/\n/g,'<br>');
 
@@ -225,7 +226,7 @@ app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req,
 // delete log
 app.get('/deleteLog', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	
-	fs.writeFileSync(path.join(__dirname,'temp.log'),"");
+	fs.writeFileSync(logfolder(),"");
 	res.send('ok');
 	res.end();		
 });
@@ -271,9 +272,7 @@ child.stdout.on('data', (data) => {
 child.stderr.on('data', (data) => {
   strData = data.toString('utf8');
   strData = strData.trim();
-  
   console.log(`child stderr: ${strData}`);
-  
   logger.info(strData);
 });
 
