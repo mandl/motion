@@ -160,8 +160,9 @@ def loop(args, camera):
             if timediff >= 1:
                 timestampLast = timestampNow
                 img_name = datetime.datetime.today().strftime('%Y-%m-%d_%H_%M_%S.%f') + '.jpg'
-                myFolder = myData.img_path +"/" + myData.startTime.strftime('%Y-%m-%d')
+                myFolder = myData.img_path +"/" + datetime.datetime.now().strftime('%Y-%m-%d')
                 if not os.path.isdir(myFolder):
+                    log.info('create folder {}'.format(myFolder))
                     os.makedirs(myFolder)
                 img_path = '{}/{}'.format(myFolder, img_name)
                 log.info("Save picture {}".format(img_name))

@@ -28,10 +28,10 @@ const jsonBody = require('body/json');
 const Rest = require('connect-rest');
 const bodyParser = require('body-parser');
 const { logger, logfolder} = require('./logger');
-//const logger = require('./logger').logger;
+// const logger = require('./logger').logger;
 const { spawn } = require('child_process');
 
-
+var dayFolder;
 
 var handlebars = require('express-handlebars')
 .create({
@@ -44,10 +44,10 @@ var handlebars = require('express-handlebars')
             this._sections[name] = options.fn(this);
             return null;
         },
-        //2018-05-30_17_15_53.396682.jpg
+        // 2018-05-30_17_15_53.396682.jpg
         formatTimeTwc:function(strTime) {
         	strTime = strTime.toString();
-            return strTime.substr(0,9) + '    ' + strTime.substr(11,8).replace(/_/g, ':') ;
+            return strTime.substr(0,10) + '    ' + strTime.substr(11,8).replace(/_/g, ':') ;
         }
     }
 });
@@ -118,7 +118,10 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // static routes
+var files = fs.readdirSync(path.join(__dirname,'picture','motion'));
+dayFolder = files[files.length-1];
 
+logger.info(dayFolder);
 
 app.use('/picture',require('connect-ensure-login').ensureLoggedIn(),express.static(__dirname + '/picture',{ maxAge: '30 days' }))
 
@@ -141,7 +144,7 @@ app.get('/', require('connect-ensure-login').ensureLoggedIn(), function(req, res
 		}, 2 * 1000);
 });
 
-//renter log page
+// renter log page
 app.get('/log', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	var logtext = fs.readFileSync(logfolder(),'utf8')
 	
@@ -153,15 +156,36 @@ app.get('/log', require('connect-ensure-login').ensureLoggedIn(), function(req, 
 
 // render motion page
 app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
-	var files = fs.readdirSync(path.join(__dirname,'picture','motion','2018-06-06'));
-	var motionFiles = {"data":[]};
-	for( i in files)
+	
+	var day = req.query.day;
+	var index = req.query.index;
+	var n = 0;
+	
+	console.log(day);
+	console.log(index);
+	
+	if (day == null)
 	{
-		var me = {"name":files[i],"folder":"2018-06-06"};
+		day= dayFolder;
+	}
+	
+	if (index == null)
+	{
+		index= 0;
+	}
+	
+	n = index * 100;
+	
+	var files = fs.readdirSync(path.join(__dirname,'picture','motion',day));
+	console.log(files.length / 100);
+	var motionFiles = {"data":[]};
+	
+	var minFiles = files.slice(n,n + 100);
+	for( i in minFiles)
+	{
+		var me = {"name":minFiles[i],"folder":day};
 		motionFiles.data.push(me);
 	}	
-	
-	//console.log(motionFiles);
 	res.render('motion', { layout:'main', title: 'Motion',fileNames:motionFiles});
 });
 
@@ -171,11 +195,17 @@ app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(re
 app.get('/clearPicture', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	
 	try {
-	fs.readdir(path.join(__dirname,'picture','motion','2018-06-06'), (err, files) => {
+		
+	var day = req.query.day;
+	if (day == null)
+	{
+		day= dayFolder;
+	}	
+	fs.readdir(path.join(__dirname,'picture','motion',day), (err, files) => {
 		  if (err) throw err;
 
 		  for (const file of files) {
-		    fs.unlinkSync(path.join(__dirname, 'picture','motion','2018-06-06', file));
+		    fs.unlinkSync(path.join(__dirname, 'picture','motion',day, file));
 		  }
 		});
 	} 
@@ -192,7 +222,7 @@ app.get('/clearPicture', require('connect-ensure-login').ensureLoggedIn(), funct
 		
 });
 
-//render motion page
+// render motion days page
 app.get('/motiondays', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	var files = fs.readdirSync(path.join(__dirname,'picture','motion'));
 	var motionFiles = {"data":[]};
@@ -202,9 +232,10 @@ app.get('/motiondays', require('connect-ensure-login').ensureLoggedIn(), functio
 		motionFiles.data.push(me);
 	}	
 	
-	//console.log(motionFiles);
+	// console.log(motionFiles);
 	res.render('motiondays', { layout:'main', title: 'Days',fileNames:motionFiles});
 });
+
 // save new ROI
 app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 		
@@ -218,6 +249,14 @@ app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req,
 		console.log(startX,startY,w,h); 
 		child.stdin.write('roi,' + startX + ',' + startY + ',' + w + ',' + h +'\n');
 	}
+	res.send('ok');
+	res.end();		
+});
+
+// set motion day
+app.get('/setmotiondays', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+	
+	dayFolder = req.query.day;
 	res.send('ok');
 	res.end();		
 });
@@ -260,7 +299,7 @@ process.on('exit', function(code) {
 
 // start motion.py
 child = spawn('python3', ['-u','motion.py']);
-//child = spawn('python3', ['motion.py']);
+
 
 child.stdout.on('data', (data) => {
 	strData = data.toString('utf8');

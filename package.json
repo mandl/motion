@@ -37,6 +37,6 @@
     "passport": "^0.2.2",
     "passport-local": "^1.0.0",
     "request": "^2.86.0",
-    "winston": "^3.0.0-rc6"
+    "winston": "^3.0.0"
   }
 }

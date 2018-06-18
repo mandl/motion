@@ -1,7 +1,6 @@
 
 <div class="container-fluid">
 <br>
-<button type="button" id="deleteAll" class="btn btn-outline-primary">Delete all</button>
 
 <br>
 </div>
@@ -10,7 +9,7 @@
   <p>Folders.</p>
 
   {{#each fileNames.data}}
-  <button type="button" class="btn btn-primary">{{name}}</button>
+  <a href="motion?day={{name}}&index=0" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">{{name}}</a>
   {{/each}}
 
 </div>
@@ -19,11 +18,6 @@
 {{#section 'jquery'}}
 <script type="text/javascript">
  $(document).ready(function() {
-	 
-   $("#deleteAll").on( "click", function() {
-
-     
-    });
     $.each($('#navbarNav').find('li'), function() {
         $(this).toggleClass('active',
             '/' + $(this).find('a').attr('href') == window.location.pathname);
