@@ -31,7 +31,9 @@ const { logger, logfolder} = require('./logger');
 // const logger = require('./logger').logger;
 const { spawn } = require('child_process');
 
+const showImageCount = 99;
 var dayFolder;
+
 
 var handlebars = require('express-handlebars')
 .create({
@@ -154,6 +156,13 @@ app.get('/log', require('connect-ensure-login').ensureLoggedIn(), function(req, 
 
 });
 
+//renter admin page
+app.get('/admin', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+
+	res.render('admin', { layout:'main', title: 'Admin'});
+
+});
+
 // render motion page
 app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	
@@ -161,8 +170,8 @@ app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(re
 	var index = req.query.index;
 	var n = 0;
 	
-	console.log(day);
-	console.log(index);
+	//console.log(day);
+	//console.log(index);
 	
 	if (day == null)
 	{
@@ -174,19 +183,22 @@ app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(re
 		index= 0;
 	}
 	
-	n = index * 100;
+	n = index * showImageCount;
 	
 	var files = fs.readdirSync(path.join(__dirname,'picture','motion',day));
-	console.log(files.length / 100);
+	var pagiCount = files.length / showImageCount;
 	var motionFiles = {"data":[]};
-	
-	var minFiles = files.slice(n,n + 100);
+	var FileCount = files.length;
+	var minFiles = files.slice(n,n + showImageCount);
 	for( i in minFiles)
 	{
 		var me = {"name":minFiles[i],"folder":day};
 		motionFiles.data.push(me);
 	}	
-	res.render('motion', { layout:'main', title: 'Motion',fileNames:motionFiles});
+	
+	var nextIndex = parseInt(index, 10) + 1;
+	var prevIndex = parseInt(index, 10) - 1;
+	res.render('motion', { layout:'main', title: 'Motion',fileNames:motionFiles, fileCount:FileCount,fileStart:n,fileStop:n+showImageCount,day:day,index:nextIndex,prevIndex:prevIndex,pagiCount:pagiCount});
 });
 
 
@@ -210,7 +222,7 @@ app.get('/clearPicture', require('connect-ensure-login').ensureLoggedIn(), funct
 		});
 	} 
 	catch (ex){
-		console.log(ex);
+		logger.error(ex);
 		
 	}
 	setTimeout(function(){
@@ -232,7 +244,7 @@ app.get('/motiondays', require('connect-ensure-login').ensureLoggedIn(), functio
 		motionFiles.data.push(me);
 	}	
 	
-	// console.log(motionFiles);
+	//console.log(motionFiles);
 	res.render('motiondays', { layout:'main', title: 'Days',fileNames:motionFiles});
 });
 
@@ -246,7 +258,7 @@ app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req,
 	
 	if ((startX != null) && (startY != null) && (w != null) && ( h != null))
 	{
-		console.log(startX,startY,w,h); 
+		//console.log(startX,startY,w,h); 
 		child.stdin.write('roi,' + startX + ',' + startY + ',' + w + ',' + h +'\n');
 	}
 	res.send('ok');
@@ -304,14 +316,14 @@ child = spawn('python3', ['-u','motion.py']);
 child.stdout.on('data', (data) => {
 	strData = data.toString('utf8');
 	strData = strData.trim();
-	console.log(`child stdout: ${strData}`);
+	//console.log(`child stdout: ${strData}`);
 	logger.info(strData);
 });
 
 child.stderr.on('data', (data) => {
   strData = data.toString('utf8');
   strData = strData.trim();
-  console.log(`child stderr: ${strData}`);
+  //console.log(`child stderr: ${strData}`);
   logger.info(strData);
 });
 

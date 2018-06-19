@@ -1,0 +1,39 @@
+<div class="container-fluid">
+<form>
+  <div class="form-group">
+    <label for="exampleFormControlSelect1">Min area</label>
+    <select class="form-control" id="exampleFormControlSelect1">
+      <option>3000</option>
+      <option>4000</option>
+      <option>5000</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="exampleFormControlSelect2">Delta threshold</label>
+    <select class="form-control" id="exampleFormControlSelect2">
+      <option>4</option>
+      <option>5</option>
+      <option>6</option>
+      <option>7</option>
+      <option>8</option>
+    </select>
+  </div>
+  <div class="form-check">
+    <input type="checkbox" class="form-check-input" id="exampleCheck1">
+    <label class="form-check-label" for="exampleCheck1">Enable annotate</label>
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>   
+</div>
+{{#section 'jquery'}}
+<script>
+ $(document).ready(function() {
+  
+    $.each($('#navbarNav').find('li'), function() {
+        $(this).toggleClass('active',
+            '/' + $(this).find('a').attr('href') == window.location.pathname);
+    }); 
+    
+  });
+</script>
+{{/section}}

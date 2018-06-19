@@ -1,17 +1,10 @@
-
 <div class="container-fluid">
-<br>
-
-<br>
-</div>
-<div class="container-fluid">
-
-  <p>Folders.</p>
-
-  {{#each fileNames.data}}
+<div class="btn-group-vertical">
+<p>Days</p>
+{{#each fileNames.data}}
   <a href="motion?day={{name}}&index=0" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">{{name}}</a>
-  {{/each}}
-
+{{/each}}
+</div>
 </div>
 
 
