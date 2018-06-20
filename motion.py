@@ -147,7 +147,7 @@ def loop(args, camera):
 
             motion = True
             
-            log.info("Motion detected  Area={}".format(area))
+            log.debug("Motion detected  Area={}".format(area))
             
             # draw the text and timestamp on the frame
             #if args.enable_annotate:
@@ -156,7 +156,7 @@ def loop(args, camera):
         if motion:
             timestampNow =  time.perf_counter() 
             timediff = timestampNow - timestampLast
-            log.info("Motion time {} ".format(timediff))
+            log.debug("Motion time {} ".format(timediff))
             if timediff >= 1:
                 timestampLast = timestampNow
                 img_name = datetime.datetime.today().strftime('%Y-%m-%d_%H_%M_%S.%f') + '.jpg'
@@ -165,7 +165,7 @@ def loop(args, camera):
                     log.info('create folder {}'.format(myFolder))
                     os.makedirs(myFolder)
                 img_path = '{}/{}'.format(myFolder, img_name)
-                log.info("Save picture {}".format(img_name))
+                log.debug("Save picture {}".format(img_name))
                 cv2.imwrite(img_path, frame)
             
 
@@ -178,7 +178,7 @@ def got_keyboard_data(stdin,mask):
    
     strCommmand = stdin.readline().rstrip()
     
-    log.info('Keyboard input: {}'.format(strCommmand))
+    log.info('Command: {}'.format(strCommmand))
     if strCommmand == 'reload':
         # load new picture
         myData.reloadView = True

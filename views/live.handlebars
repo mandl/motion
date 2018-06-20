@@ -47,12 +47,16 @@ init();
 	
     console.log('ready');
     $("#onSave").on( "click", function() {
-        console.log(rect);
-     
-    
+        var area = rect.w * rect.h;
+        
+        if( area < 8000)
+        {
+        	alert("Area to schmall:" + area);
+        	return;
+        }
+        
         $.get( "save",{  startX: rect.startX, startY: rect.startY, w: rect.w, h: rect.h} , function( data ) {
             
-          
             console.log(data);
             location.reload();
             

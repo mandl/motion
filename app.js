@@ -33,6 +33,7 @@ const { spawn } = require('child_process');
 
 const showImageCount = 99;
 var dayFolder;
+var recentIndex = 0
 
 
 var handlebars = require('express-handlebars')
@@ -120,6 +121,8 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // static routes
+app.use(express.static(__dirname+'/public'));
+
 var files = fs.readdirSync(path.join(__dirname,'picture','motion'));
 dayFolder = files[files.length-1];
 
@@ -156,11 +159,23 @@ app.get('/log', require('connect-ensure-login').ensureLoggedIn(), function(req, 
 
 });
 
-//renter admin page
+// renter admin page
 app.get('/admin', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 
-	res.render('admin', { layout:'main', title: 'Admin'});
+	res.render('admin', { layout:'main', title: 'Admin',level:"",area:"",threshold:""});
 
+});
+
+// admin data
+app.post('/admindata',require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+	
+	
+	var annotate=req.body.annotate;
+	var level=req.body.level;
+	var threshold=req.body.threshold;
+	var area=req.body.area;
+
+	res.redirect('/');
 });
 
 // render motion page
@@ -170,17 +185,25 @@ app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(re
 	var index = req.query.index;
 	var n = 0;
 	
-	//console.log(day);
-	//console.log(index);
+	// console.log(day);
+	// console.log(index);
 	
 	if (day == null)
 	{
 		day= dayFolder;
 	}
+	else
+	{
+		dayFolder=day;
+	}
 	
 	if (index == null)
 	{
-		index= 0;
+		index= recentIndex;
+	}
+	else
+	{
+		recentIndex = index;
 	}
 	
 	n = index * showImageCount;
@@ -244,7 +267,7 @@ app.get('/motiondays', require('connect-ensure-login').ensureLoggedIn(), functio
 		motionFiles.data.push(me);
 	}	
 	
-	//console.log(motionFiles);
+	// console.log(motionFiles);
 	res.render('motiondays', { layout:'main', title: 'Days',fileNames:motionFiles});
 });
 
@@ -258,7 +281,7 @@ app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req,
 	
 	if ((startX != null) && (startY != null) && (w != null) && ( h != null))
 	{
-		//console.log(startX,startY,w,h); 
+		// console.log(startX,startY,w,h);
 		child.stdin.write('roi,' + startX + ',' + startY + ',' + w + ',' + h +'\n');
 	}
 	res.send('ok');
@@ -316,14 +339,14 @@ child = spawn('python3', ['-u','motion.py']);
 child.stdout.on('data', (data) => {
 	strData = data.toString('utf8');
 	strData = strData.trim();
-	//console.log(`child stdout: ${strData}`);
+	// console.log(`child stdout: ${strData}`);
 	logger.info(strData);
 });
 
 child.stderr.on('data', (data) => {
   strData = data.toString('utf8');
   strData = strData.trim();
-  //console.log(`child stderr: ${strData}`);
+  // console.log(`child stderr: ${strData}`);
   logger.info(strData);
 });
 
