@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-# Designed to run on a Raspberry Pi 3
-
+# 
 import logging
-logging.basicConfig(format='%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(message)s', level=logging.DEBUG)
 log = logging.getLogger('')
 import datetime
 import argparse
@@ -13,12 +12,10 @@ import sys
 import fcntl
 import selectors
 import json
-from picamera.array import PiRGBArray
-from picamera import PiCamera
+
 import cv2
 
-# Camera name
-camName = "CAMPI"
+camName = ""
 class ConfigData:
     
     def __init__(self):
@@ -28,15 +25,15 @@ class ConfigData:
         self.updateROI = True
         self.reloadView = False
         
-        self.liveView_path = '/{}/{}/{}'.format('media','config', 'viewLive.jpg')
-        self.roiView_path = '/{}/{}/{}'.format('media','config', 'roi.jpg')
-        self.img_path = '/{}/{}'.format('media','motion')
+        self.liveView_path = '/{}/{}/{}'.format('media','config', 'view'+ camName +'.jpg')
+        self.roiView_path = '/{}/{}/{}'.format('media','config', 'roi'+ camName +'.jpg')
+        self.img_path = '/{}/{}'.format('media','motion'+camName)
        
         self.w = 948
         self.h = 351
         
         self.startTime =datetime.datetime.now()
-        
+        self.stream = ""
         self.update()
         
     def update(self):
@@ -48,6 +45,7 @@ class ConfigData:
     def log(self):
         log.info('Data: x {} y {} w {} h {}'.format(self.x,self.y,self.w,self.h))
         
+        log.info('Cam stream: {}'.format(self.stream))
 
 myData = ConfigData()
 
@@ -67,8 +65,6 @@ def annotate_frame(frame, area, contour,offsetX,offsetY):
 
 def start(args):
     
-    
-    
     with open('config.json', 'r') as f:
         config = json.load(f)
 
@@ -76,27 +72,20 @@ def start(args):
         myData.y = config[camName]['y']
         myData.w = config[camName]['w']
         myData.h = config[camName]['h']
-        myData.update()
-        
+        myData.stream = config['STREAM'+camName]
+        myData.update() 
+    loop(args)
 
-    camera = PiCamera()
-    camera.resolution = args.resolution
-    camera.framerate = args.fps
-    log.info("Warming up camera")
-    time.sleep(5)
-    loop(args, camera)
-
-def loop(args, camera):
+def loop(args):
     avg = None
-    raw_capture = PiRGBArray(camera, size=args.resolution)
     log.info("Starting capture")
     global myData
     myData.log()
     timestampLast =  time.perf_counter()
     
-    for f in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True):
-        frame = f.array
-        
+    vcap = cv2.VideoCapture(myData.stream)
+    while True: 
+        ret, frame = vcap.read()
         if myData.reloadView == True:
             log.info("Reload view")
             cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
@@ -207,17 +196,14 @@ m_selector = selectors.DefaultSelector()
 m_selector.register(sys.stdin, selectors.EVENT_READ, got_keyboard_data)
 
 
-def parse_res(v):
-    x, y = v.lower().split('x')
-    return int(x), int(y)
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Motion detect')
-    parser.add_argument('--resolution', help='e.g 640x480', default=parse_res('1280x720'))
-    parser.add_argument('--fps', help='Framerate e.g: 18', default=int('18'))
+    parser.add_argument('--cam', help='CAM1', default='CAM2')
     parser.add_argument('--delta-threshold', default=int(5))
+    parser.add_argument('--enable-annotate', help='Draw detected regions to image', action='store_true', default=True)
     parser.add_argument('--min-area', default=int(5000))
     
     args = parser.parse_args()
+    camName = args.cam
     log.debug(args)  
     start(args)

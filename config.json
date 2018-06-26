@@ -1,14 +1,33 @@
 {
-    "CAM1": {
+    "CAMPI": {
         "h": 211,
         "w": 726,
         "x": 436,
         "y": 481
     },
-    "CAM2": {
+    "CAM1": {
+        "h": 566,
+        "w": 811,
+        "x": 0,
+        "y": 0
+    },
+     "CAM2": {
         "h": 566,
         "w": 811,
         "x": 328,
         "y": 150
-    }
+    },
+     "CAM3": {
+        "h": 566,
+        "w": 811,
+        "x": 328,
+        "y": 150
+    },
+   "piCam":true,
+   "usestreamCam1":false,
+   "usestreamCam2":false,
+   "usestreamCam3":false,
+   "STREAMCAM1": "rtsp://",
+   "STREAMCAM2": "rtsp://",
+   "STREAMCAM3": "rtsp://"
 }

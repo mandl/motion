@@ -28,12 +28,12 @@ const jsonBody = require('body/json');
 const Rest = require('connect-rest');
 const bodyParser = require('body-parser');
 const { logger, logfolder} = require('./logger');
-// const logger = require('./logger').logger;
 const { spawn } = require('child_process');
+const configData = require('config.json');
 
 const showImageCount = 99;
 var dayFolder;
-var recentIndex = 0
+var recentIndex = 0;
 
 
 var handlebars = require('express-handlebars')
@@ -54,8 +54,6 @@ var handlebars = require('express-handlebars')
         }
     }
 });
-
-
 
 // Configure the local strategy for use by Passport.
 //
@@ -134,7 +132,6 @@ app.use('/picture',require('connect-ensure-login').ensureLoggedIn(),express.stat
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
-
 app.get('/login', function(req, res) {
 	 res.sendFile(path.join(__dirname, 'public','login.html'));
 });
@@ -168,8 +165,7 @@ app.get('/admin', require('connect-ensure-login').ensureLoggedIn(), function(req
 
 // admin data
 app.post('/admindata',require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
-	
-	
+
 	var annotate=req.body.annotate;
 	var level=req.body.level;
 	var threshold=req.body.threshold;
@@ -223,8 +219,6 @@ app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(re
 	var prevIndex = parseInt(index, 10) - 1;
 	res.render('motion', { layout:'main', title: 'Motion',fileNames:motionFiles, fileCount:FileCount,fileStart:n,fileStop:n+showImageCount,day:day,index:nextIndex,prevIndex:prevIndex,pagiCount:pagiCount});
 });
-
-
 
 // Clear all pictures
 app.get('/clearPicture', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
@@ -296,7 +290,6 @@ app.get('/setmotiondays', require('connect-ensure-login').ensureLoggedIn(), func
 	res.end();		
 });
 
-
 // delete log
 app.get('/deleteLog', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	
@@ -332,21 +325,83 @@ process.on('exit', function(code) {
 	child.kill('SIGHUP')
 });
 
-// start motion.py
-child = spawn('python3', ['-u','motion.py']);
 
+if( configData.piCam)
+{
+    // start motion.py
+    child = spawn('python3', ['-u','motion.py']);
+    
+    child.stdout.on('data', (data) => {
+    	strData = data.toString('utf8');
+    	strData = strData.trim();
+    	// console.log(`child stdout: ${strData}`);
+    	logger.info(strData);
+    });
+    
+    child.stderr.on('data', (data) => {
+      strData = data.toString('utf8');
+      strData = strData.trim();
+      // console.log(`child stderr: ${strData}`);
+      logger.info(strData);
+    });
+}
 
-child.stdout.on('data', (data) => {
-	strData = data.toString('utf8');
-	strData = strData.trim();
-	// console.log(`child stdout: ${strData}`);
-	logger.info(strData);
-});
+if( configData.usestreamCam1)
+{
+    // start motion.py
+    childStream1 = spawn('python3', ['-u','motionStream.py','--cam CAM2']);
+    
+    childStream1.stdout.on('data', (data) => {
+        strData = data.toString('utf8');
+        strData = strData.trim();
+        // console.log(`child stdout: ${strData}`);
+        logger.info(strData);
+    });
+    
+    childStream1.stderr.on('data', (data) => {
+      strData = data.toString('utf8');
+      strData = strData.trim();
+      // console.log(`child stderr: ${strData}`);
+      logger.info(strData);
+    });
+}
 
-child.stderr.on('data', (data) => {
-  strData = data.toString('utf8');
-  strData = strData.trim();
-  // console.log(`child stderr: ${strData}`);
-  logger.info(strData);
-});
+if( configData.usestreamCam2)
+{
+    // start motion.py
+    childStream2 = spawn('python3', ['-u','motionStream.py','--cam CAM3']);
+    
+    childStream2.stdout.on('data', (data) => {
+        strData = data.toString('utf8');
+        strData = strData.trim();
+        // console.log(`child stdout: ${strData}`);
+        logger.info(strData);
+    });
+    
+    childStream2.stderr.on('data', (data) => {
+      strData = data.toString('utf8');
+      strData = strData.trim();
+      // console.log(`child stderr: ${strData}`);
+      logger.info(strData);
+    });
+}
 
+if( configData.usestreamCam3)
+{
+    // start motion.py
+    childStream3 = spawn('python3', ['-u','motionStream.py','--cam CAM4']);
+    
+    childStream3.stdout.on('data', (data) => {
+        strData = data.toString('utf8');
+        strData = strData.trim();
+        // console.log(`child stdout: ${strData}`);
+        logger.info(strData);
+    });
+    
+    childStream3.stderr.on('data', (data) => {
+      strData = data.toString('utf8');
+      strData = strData.trim();
+      // console.log(`child stderr: ${strData}`);
+      logger.info(strData);
+    });
+}
