@@ -1,33 +1,33 @@
 {
+    "CAM1": {
+        "h": 453,
+        "w": 538,
+        "x": 512,
+        "y": 354
+    },
+    "CAM2": {
+        "h": 382,
+        "w": 735,
+        "x": 411,
+        "y": 289
+    },
+    "CAM3": {
+        "h": 291,
+        "w": 506,
+        "x": 200,
+        "y": 161
+    },
     "CAMPI": {
         "h": 211,
         "w": 726,
         "x": 436,
         "y": 481
     },
-    "CAM1": {
-        "h": 566,
-        "w": 811,
-        "x": 0,
-        "y": 0
-    },
-     "CAM2": {
-        "h": 566,
-        "w": 811,
-        "x": 328,
-        "y": 150
-    },
-     "CAM3": {
-        "h": 566,
-        "w": 811,
-        "x": 328,
-        "y": 150
-    },
-   "piCam":true,
-   "usestreamCam1":false,
-   "usestreamCam2":false,
-   "usestreamCam3":false,
-   "STREAMCAM1": "rtsp://",
-   "STREAMCAM2": "rtsp://",
-   "STREAMCAM3": "rtsp://"
+    "STREAMCAM1": "rtsp://admin:admin@192.168.178.33:8554/live2.264",
+    "STREAMCAM2": "rtsp://admin:admin@192.168.178.36:8554/live2.264",
+    "STREAMCAM3": "rtsp://admin:admin@192.168.178.31:8554/live2.264",
+    "piCam": false,
+    "usestreamCam1": true,
+    "usestreamCam2": true,
+    "usestreamCam3": true
 }

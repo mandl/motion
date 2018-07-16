@@ -29,7 +29,7 @@ const Rest = require('connect-rest');
 const bodyParser = require('body-parser');
 const { logger, logfolder} = require('./logger');
 const { spawn } = require('child_process');
-const configData = require('config.json');
+const configData = require('./config.json');
 
 const showImageCount = 99;
 var dayFolder;
@@ -136,16 +136,57 @@ app.get('/login', function(req, res) {
 	 res.sendFile(path.join(__dirname, 'public','login.html'));
 });
 
+
+
+
 // renter main page
 app.get('/', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
-	child.stdin.write('reload\n');
+	
+	if( configData.piCam)
+	{
+		child.stdin.write('reload\n');
+		
+	}
+	if( configData.usestreamCam1)
+	{
+		childStream1.stdin.write('reload\n');
+	}
 	setTimeout(function(){
 		
-		res.render('live', { layout:'main', title: 'Live view'});
+		res.render('livertsp', { layout:'main', title: 'Live view',camname:'CAM1'});
 		  
 		}, 2 * 1000);
 });
 
+//renter cam page
+app.get('/cam2view', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+	
+	
+	if( configData.usestreamCam2)
+	{
+		childStream2.stdin.write('reload\n');
+	}
+	setTimeout(function(){
+		
+		res.render('livertsp', { layout:'main', title: 'Live view',camname:'CAM2'});
+		  
+		}, 2 * 1000);
+});
+
+//renter cam page
+app.get('/cam3view', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+	
+	
+	if( configData.usestreamCam3)
+	{
+		childStream3.stdin.write('reload\n');
+	}
+	setTimeout(function(){
+		
+		res.render('livertsp', { layout:'main', title: 'Live view',camname:'CAM3'});
+		  
+		}, 2 * 1000);
+});
 // renter log page
 app.get('/log', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 	var logtext = fs.readFileSync(logfolder(),'utf8')
@@ -204,7 +245,9 @@ app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(re
 	
 	n = index * showImageCount;
 	
+	
 	var files = fs.readdirSync(path.join(__dirname,'picture','motion',day));
+	
 	var pagiCount = files.length / showImageCount;
 	var motionFiles = {"data":[]};
 	var FileCount = files.length;
@@ -253,7 +296,9 @@ app.get('/clearPicture', require('connect-ensure-login').ensureLoggedIn(), funct
 
 // render motion days page
 app.get('/motiondays', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+	
 	var files = fs.readdirSync(path.join(__dirname,'picture','motion'));
+	
 	var motionFiles = {"data":[]};
 	for( i in files)
 	{
@@ -268,6 +313,7 @@ app.get('/motiondays', require('connect-ensure-login').ensureLoggedIn(), functio
 // save new ROI
 app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
 		
+	var cam = req.query.cam;
 	var startX = req.query.startX;
 	var startY = req.query.startY;
 	var w = req.query.w;
@@ -276,7 +322,22 @@ app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req,
 	if ((startX != null) && (startY != null) && (w != null) && ( h != null))
 	{
 		// console.log(startX,startY,w,h);
-		child.stdin.write('roi,' + startX + ',' + startY + ',' + w + ',' + h +'\n');
+		if( cam=='CAMPI')
+		{
+			child.stdin.write('roi,' + startX + ',' + startY + ',' + w + ',' + h +'\n');
+		}
+		if( cam=="CAM1")
+		{
+			childStream1.stdin.write('roi,' + startX + ',' + startY + ',' + w + ',' + h +'\n');
+		}
+		if( cam=="CAM2")
+		{
+			childStream2.stdin.write('roi,' + startX + ',' + startY + ',' + w + ',' + h +'\n');
+		}
+		if( cam=="CAM3")
+		{
+			childStream3.stdin.write('roi,' + startX + ',' + startY + ',' + w + ',' + h +'\n');
+		}
 	}
 	res.send('ok');
 	res.end();		
@@ -349,7 +410,7 @@ if( configData.piCam)
 if( configData.usestreamCam1)
 {
     // start motion.py
-    childStream1 = spawn('python3', ['-u','motionStream.py','--cam CAM2']);
+    childStream1 = spawn('python3', ['-u','motionStream.py','--cam','CAM1']);
     
     childStream1.stdout.on('data', (data) => {
         strData = data.toString('utf8');
@@ -369,7 +430,7 @@ if( configData.usestreamCam1)
 if( configData.usestreamCam2)
 {
     // start motion.py
-    childStream2 = spawn('python3', ['-u','motionStream.py','--cam CAM3']);
+    childStream2 = spawn('python3', ['-u','motionStream.py','--cam','CAM2']);
     
     childStream2.stdout.on('data', (data) => {
         strData = data.toString('utf8');
@@ -389,7 +450,7 @@ if( configData.usestreamCam2)
 if( configData.usestreamCam3)
 {
     // start motion.py
-    childStream3 = spawn('python3', ['-u','motionStream.py','--cam CAM4']);
+    childStream3 = spawn('python3', ['-u','motionStream.py','--cam','CAM3']);
     
     childStream3.stdout.on('data', (data) => {
         strData = data.toString('utf8');

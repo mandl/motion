@@ -1,6 +1,6 @@
 <div class="container-fluid">
 <h1>Web cam</h1>
-<canvas id="canvas" width="1280" height="720"></canvas>
+<canvas id="canvas" width="640" height="480"></canvas>
 </div>
 <div class="container-fluid">
 <button class="btn btn-secondary btn-lg" id="onSave">Save</button>
@@ -33,7 +33,7 @@ function mouseUp() { drag = false; }
 
 function mouseMove(e) {
     if (drag) {
-        ctx.clearRect(0, 0, 1280, 720);
+        ctx.clearRect(0, 0, 768, 576);
         ctx.drawImage(imageObj, 0, 0);
         rect.w = (e.pageX - this.offsetLeft) - rect.startX;
         rect.h = (e.pageY - this.offsetTop) - rect.startY;

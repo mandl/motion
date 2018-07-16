@@ -26,7 +26,7 @@ class ConfigData:
         self.y = 367
         
         self.updateROI = True
-        self.reloadView = False
+        self.reloadView = True
         
         self.liveView_path = '/{}/{}/{}'.format('media','config', 'viewLive.jpg')
         self.roiView_path = '/{}/{}/{}'.format('media','config', 'roi.jpg')
