@@ -1,6 +1,6 @@
 <div class="container-fluid">
 <h1>Web cam</h1>
-<canvas id="canvas" width="640" height="480"></canvas>
+<canvas id="canvas" width="1280" height="960"></canvas>
 </div>
 <div class="container-fluid">
 <button class="btn btn-secondary btn-lg" id="onSave">Save</button>
@@ -17,7 +17,7 @@ var imageObj = null;
 function init() {
     imageObj = new Image();
     imageObj.onload = function () { ctx.drawImage(imageObj, 0, 0); };
-    imageObj.src = '/picture/config/viewLive.jpg';
+    imageObj.src = '/motion/picture/config/view/{{camname}}.png';
     canvas.addEventListener('mousedown', mouseDown, false);
     canvas.addEventListener('mouseup', mouseUp, false);
     canvas.addEventListener('mousemove', mouseMove, false);

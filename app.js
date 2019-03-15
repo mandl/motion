@@ -1,7 +1,7 @@
 /*
     Heizung
     
-    Copyright (C) 2018 Mandl
+    Copyright (C) 2018-2019 Mandl
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,17 +18,12 @@
  */
 
 const fs = require('fs');
-const child_process = require('child_process');
 const express = require('express');
-const passport = require('passport');
-const Strategy = require('passport-local').Strategy;
 const path = require('path');
-const db = require('./db');
 const jsonBody = require('body/json');
 const Rest = require('connect-rest');
 const bodyParser = require('body-parser');
 const { logger, logfolder} = require('./logger');
-const { spawn } = require('child_process');
 const configData = require('./config.json');
 
 const showImageCount = 99;
@@ -55,46 +50,6 @@ var handlebars = require('express-handlebars')
     }
 });
 
-// Configure the local strategy for use by Passport.
-//
-// The local strategy require a `verify` function which receives the credentials
-// (`username` and `password`) submitted by the user. The function must verify
-// that the password is correct and then invoke `cb` with a user object, which
-// will be set at `req.user` in route handlers after authentication.
-passport.use(new Strategy(function(username, password, cb) {
-	db.users.findByUsername(username, function(err, user) {
-		if (err) {
-			return cb(err);
-		}
-		if (!user) {
-			return cb(null, false);
-		}
-		if (user.password != password) {
-			return cb(null, false);
-		}
-		return cb(null, user);
-	});
-}));
-
-// Configure Passport authenticated session persistence.
-//
-// In order to restore authentication state across HTTP requests, Passport needs
-// to serialize users into and deserialize users out of the session. The
-// typical implementation of this is as simple as supplying the user ID when
-// serializing, and querying the user record by ID from the database when
-// deserializing.
-passport.serializeUser(function(user, cb) {
-	cb(null, user.id);
-});
-
-passport.deserializeUser(function(id, cb) {
-	db.users.findById(id, function(err, user) {
-		if (err) {
-			return cb(err);
-		}
-		cb(null, user);
-	});
-});
 
 // Create a new Express application.
 var app = express();
@@ -103,7 +58,7 @@ app.disable('x-powered-by');
 
 // Use application-level middleware for common functionality, including
 // logging, parsing, and session handling.
-// app.use(require('morgan')('dev'));
+app.use(require('morgan')('dev'));
 app.use(require('cookie-parser')());
 app.use(bodyParser.urlencoded({ extended : true }));
 app.use(require('express-session')({
@@ -111,12 +66,6 @@ app.use(require('express-session')({
 	resave : false,
 	saveUninitialized : false
 }));
-
-
-// Initialize Passport and restore authentication state, if any, from the
-// session.
-app.use(passport.initialize());
-app.use(passport.session());
 
 // static routes
 app.use(express.static(__dirname+'/public'));
@@ -126,69 +75,43 @@ dayFolder = files[files.length-1];
 
 logger.info(dayFolder);
 
-app.use('/picture',require('connect-ensure-login').ensureLoggedIn(),express.static(__dirname + '/picture',{ maxAge: '30 days' }))
+app.use('/picture',express.static(__dirname + '/picture',{ maxAge: '30 days' }))
 
 // view engine
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
-app.get('/login', function(req, res) {
-	 res.sendFile(path.join(__dirname, 'public','login.html'));
-});
-
-
-
 
 // renter main page
-app.get('/', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
-	
-	if( configData.piCam)
-	{
-		child.stdin.write('reload\n');
-		
-	}
-	if( configData.usestreamCam1)
-	{
-		childStream1.stdin.write('reload\n');
-	}
-	setTimeout(function(){
-		
-		res.render('livertsp', { layout:'main', title: 'Live view',camname:'CAM1'});
-		  
-		}, 2 * 1000);
+app.get('/', function(req, res) {
+
+    res.render('live', { layout:'main', title: 'Live view',camname:'cam1'});
+
+});
+
+// renter main page
+app.get('/cam1view', function(req, res) {
+
+    res.render('live', { layout:'main', title: 'Live view',camname:'cam1'});
+
 });
 
 //renter cam page
-app.get('/cam2view', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
-	
-	
-	if( configData.usestreamCam2)
-	{
-		childStream2.stdin.write('reload\n');
-	}
-	setTimeout(function(){
-		
-		res.render('livertsp', { layout:'main', title: 'Live view',camname:'CAM2'});
-		  
-		}, 2 * 1000);
+app.get('/cam2view', function(req, res) {
+
+  res.render('live', { layout:'main', title: 'Live view',camname:'cam2'});
+
 });
 
 //renter cam page
-app.get('/cam3view', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
-	
-	
-	if( configData.usestreamCam3)
-	{
-		childStream3.stdin.write('reload\n');
-	}
-	setTimeout(function(){
-		
-		res.render('livertsp', { layout:'main', title: 'Live view',camname:'CAM3'});
-		  
-		}, 2 * 1000);
+app.get('/cam3view', function(req, res) {
+
+   res.render('live', { layout:'main', title: 'Live view',camname:'cam3'});
+
 });
+
 // renter log page
-app.get('/log', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+app.get('/log', function(req, res) {
 	var logtext = fs.readFileSync(logfolder(),'utf8')
 	
 	logtext = logtext.replace(/\n/g,'<br>');
@@ -198,14 +121,14 @@ app.get('/log', require('connect-ensure-login').ensureLoggedIn(), function(req, 
 });
 
 // renter admin page
-app.get('/admin', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+app.get('/admin', function(req, res) {
 
 	res.render('admin', { layout:'main', title: 'Admin',level:"",area:"",threshold:""});
 
 });
 
 // admin data
-app.post('/admindata',require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+app.post('/admindata', function(req, res) {
 
 	var annotate=req.body.annotate;
 	var level=req.body.level;
@@ -216,7 +139,7 @@ app.post('/admindata',require('connect-ensure-login').ensureLoggedIn(), function
 });
 
 // render motion page
-app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+app.get('/motion', function(req, res) {
 	
 	var day = req.query.day;
 	var index = req.query.index;
@@ -264,7 +187,7 @@ app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(re
 });
 
 // Clear all pictures
-app.get('/clearPicture', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+app.get('/clearPicture', function(req, res) {
 	
 	try {
 		
@@ -295,7 +218,7 @@ app.get('/clearPicture', require('connect-ensure-login').ensureLoggedIn(), funct
 });
 
 // render motion days page
-app.get('/motiondays', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+app.get('/motiondays', function(req, res) {
 	
 	var files = fs.readdirSync(path.join(__dirname,'picture','motion'));
 	
@@ -311,7 +234,7 @@ app.get('/motiondays', require('connect-ensure-login').ensureLoggedIn(), functio
 });
 
 // save new ROI
-app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+app.get('/save', function(req, res) {
 		
 	var cam = req.query.cam;
 	var startX = req.query.startX;
@@ -344,7 +267,7 @@ app.get('/save', require('connect-ensure-login').ensureLoggedIn(), function(req,
 });
 
 // set motion day
-app.get('/setmotiondays', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+app.get('/setmotiondays', function(req, res) {
 	
 	dayFolder = req.query.day;
 	res.send('ok');
@@ -352,24 +275,11 @@ app.get('/setmotiondays', require('connect-ensure-login').ensureLoggedIn(), func
 });
 
 // delete log
-app.get('/deleteLog', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
+app.get('/deleteLog', function(req, res) {
 	
 	fs.writeFileSync(logfolder(),"");
 	res.send('ok');
 	res.end();		
-});
-
-// Login
-app.post('/login', passport.authenticate('local', {
-	failureRedirect : '/login'
-}), function(req, res) {
-	res.redirect('/');
-});
-
-// logout from server
-app.get('/logout', function(req, res) {
-	req.logout();
-	res.redirect('/');
 });
 
 // Handle 404
@@ -382,87 +292,4 @@ app.listen(3000, function () {
 	  logger.info('Motion listening on port 3000!');
 });
 
-process.on('exit', function(code) {
-	child.kill('SIGHUP')
-});
 
-
-if( configData.piCam)
-{
-    // start motion.py
-    child = spawn('python3', ['-u','motion.py']);
-    
-    child.stdout.on('data', (data) => {
-    	strData = data.toString('utf8');
-    	strData = strData.trim();
-    	// console.log(`child stdout: ${strData}`);
-    	logger.info(strData);
-    });
-    
-    child.stderr.on('data', (data) => {
-      strData = data.toString('utf8');
-      strData = strData.trim();
-      // console.log(`child stderr: ${strData}`);
-      logger.info(strData);
-    });
-}
-
-if( configData.usestreamCam1)
-{
-    // start motion.py
-    childStream1 = spawn('python3', ['-u','motionStream.py','--cam','CAM1']);
-    
-    childStream1.stdout.on('data', (data) => {
-        strData = data.toString('utf8');
-        strData = strData.trim();
-        // console.log(`child stdout: ${strData}`);
-        logger.info(strData);
-    });
-    
-    childStream1.stderr.on('data', (data) => {
-      strData = data.toString('utf8');
-      strData = strData.trim();
-      // console.log(`child stderr: ${strData}`);
-      logger.info(strData);
-    });
-}
-
-if( configData.usestreamCam2)
-{
-    // start motion.py
-    childStream2 = spawn('python3', ['-u','motionStream.py','--cam','CAM2']);
-    
-    childStream2.stdout.on('data', (data) => {
-        strData = data.toString('utf8');
-        strData = strData.trim();
-        // console.log(`child stdout: ${strData}`);
-        logger.info(strData);
-    });
-    
-    childStream2.stderr.on('data', (data) => {
-      strData = data.toString('utf8');
-      strData = strData.trim();
-      // console.log(`child stderr: ${strData}`);
-      logger.info(strData);
-    });
-}
-
-if( configData.usestreamCam3)
-{
-    // start motion.py
-    childStream3 = spawn('python3', ['-u','motionStream.py','--cam','CAM3']);
-    
-    childStream3.stdout.on('data', (data) => {
-        strData = data.toString('utf8');
-        strData = strData.trim();
-        // console.log(`child stdout: ${strData}`);
-        logger.info(strData);
-    });
-    
-    childStream3.stderr.on('data', (data) => {
-      strData = data.toString('utf8');
-      strData = strData.trim();
-      // console.log(`child stderr: ${strData}`);
-      logger.info(strData);
-    });
-}
