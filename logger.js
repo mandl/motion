@@ -21,7 +21,7 @@ const { combine, timestamp, label, prettyPrint,printf } = format;
 
 const path = require('path');
 
-const logFolder = path.join('/media','motion.log');
+const logFolder = path.join('/home','mandl','motion','motion.log');
 
 const myFormat = printf(info => {
 	  return `${info.timestamp} ${info.level}: ${info.message}`;

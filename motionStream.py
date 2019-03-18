@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # 
+
 import logging
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
+logging.basicConfig(filename='/home/mandl/motion/motion.log',format='%(asctime)s %(message)s', level=logging.INFO)
 log = logging.getLogger('')
 import datetime
 import argparse
@@ -19,7 +20,6 @@ import cv2
 
 
 class ConfigData:
-    
     def __init__(self):
         self.x = 317
         self.y = 367
@@ -28,7 +28,7 @@ class ConfigData:
         self.camName=""
         #self.liveView_path = '/{}/{}/{}'.format('media','config', 'view'+ camName +'.jpg')
         #self.roiView_path = '/{}/{}/{}'.format('media','config', 'roi'+ camName +'.jpg')
-        
+
         self.rootPath = Path("/home/mandl/disk/video")
         self.rootPath2 = Path("/home/mandl/motion")
         self.img_path = self.rootPath2 / "picture" / "motion"
@@ -53,20 +53,20 @@ class ConfigData:
         log.info('Motion path: {}'.format(self.img_path))
         log.info('ROI path:    {}'.format(self.roiView_path))
         log.info('Live path:   {}'.format(self.liveView_path))
-        log.info('Root path: {}'.format(self.rootPath))
-        log.info('CamName: {}'.format(self.camName))
+        log.info('Root path:   {}'.format(self.rootPath))
+        log.info('CamName:     {}'.format(self.camName))
 
 myData = ConfigData()
 
 def annotate_frame(frame, area, contour,offsetX,offsetY):
-    timestamp = datetime.datetime.now()
-    ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
+    #timestamp = datetime.datetime.now()
+    #ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
     (x, y, w, h) = cv2.boundingRect(contour)
     # show ROI
-    cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
+    #cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
     # show motion
     cv2.rectangle(frame, ( offsetX + x, offsetY + y), (offsetX + x + w, offsetY + y + h), (255, 255, 255), 1)
-    cv2.putText(frame, str(area), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+    #cv2.putText(frame, str(area), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
     return frame
 
 
@@ -85,7 +85,7 @@ def start(args):
 
 def loop(args):
     avg = None
-    log.info("Starting capture " + args.cam)
+    #log.info("Starting capture " + args.cam)
     global myData
     myData.log()
     myMp4 = myData.rootPath / args.cam / '*.mp4'
@@ -95,29 +95,35 @@ def loop(args):
     net = darknet.load_net(mycfg, myweights, 0)
     meta = darknet.load_meta(myCocoData.encode('utf8'))
 
-    #r = detect(net, meta, "data/dog.jpg")
-    for name in glob.glob(str(myMp4)):
-        log.info("Open file:"+ name)
+    files = glob.glob(str(myMp4))
+    files.sort(key=os.path.getmtime)
+    for name in files:
+        log.info("Open file "+ name)
+        foundSomeThing = False
         vcap = cv2.VideoCapture(name)
-        log.info("Video width: {}".format(vcap.get(cv2.CAP_PROP_FRAME_WIDTH)))
+        log.info("Video width:  {}".format(vcap.get(cv2.CAP_PROP_FRAME_WIDTH)))
         log.info("Video height: {}".format(vcap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-        log.info("Video fps: {}".format(round(vcap.get(cv2.CAP_PROP_FPS))))
+        log.info("Video fps:    {}".format(round(vcap.get(cv2.CAP_PROP_FPS))))
+        myData.reloadView = True
+        myData.updateROI = True
+        timestampLast = time.perf_counter()
         while True:
             ret, frame = vcap.read()
             if ret==False:
                 log.info("End of file ")
                 break
             if myData.reloadView == True:
-                log.info("Reload view " + camName)
+                log.info("Reload view " + args.cam)
                 cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
                 cv2.imwrite(str(myData.liveView_path), frame)
                 myData.reloadView = False
-            #if myData.updateROI == True:
-            #    log.info("Update ROI " + camName)
-            #    frameRoiView = frame[myData.y1:myData.y2,myData.x1:myData.x2]
-            #    cv2.imwrite(myData.roiView_path, frameRoiView)
-            #    avg = None
-            #    myData.updateROI = False
+            if myData.updateROI == True:
+                log.info("Update ROI " + args.cam)
+                frameRoiView = frame[myData.y1:myData.y2,myData.x1:myData.x2]
+                #cv2.imwrite(myData.roiView_path, frameRoiView)
+                avg = None
+                myData.updateROI = False
+            currFramePos =  vcap.get(cv2.CAP_PROP_POS_FRAMES)
             # resize, grayscale & blur out noise
             # numpy syntax expects [y:y+h, x:x+w]
             frameRoi = frame[myData.y1:myData.y2,myData.x1:myData.x2]
@@ -125,7 +131,7 @@ def loop(args):
             gray = cv2.GaussianBlur(gray, (21, 21), 0)
             # if the average frame is None, initialize it
             if avg is None:
-                log.info("Initialising average frame " + camName)
+                log.info("Initialising average frame " + args.cam)
                 avg = gray.copy().astype("float")
                 continue
             # accumulate the weighted average between the current frame and
@@ -145,38 +151,63 @@ def loop(args):
                 if area < args.min_area:
                     continue
                 motion = True
-                log.debug("Motion detected  Area={} from cam {}".format(area,camName))
+                log.debug("Motion detected  Area={} from {}".format(area, args.cam))
                 # draw the text and timestamp on the frame
-                #if args.enable_annotate:
-                frame = annotate_frame( frame, area, c, myData.x, myData.y)
+                if args.enable_annotate:
+                    frame = annotate_frame( frame, area, c, myData.x, myData.y)
 
             if motion:
-                r = detect(net, meta, frame)
-                log.info(r)
-                #timestampNow =  time.perf_counter() 
-                #timediff = timestampNow - timestampLast
-                #log.debug("Motion time ") #.format(timediff))
-                #if timediff >= 1:
-                #timestampLast = timestampNow
-                img_name = datetime.datetime.today().strftime('%Y-%m-%d_%H_%M_%S.%f') + '.jpg'
-                myFolder = str(myData.img_path) +"/" + datetime.datetime.now().strftime('%Y-%m-%d')
-                if not os.path.isdir(myFolder):
-                    log.info('create folder {}'.format(myFolder))
-                    os.makedirs(myFolder)
-                img_path = '{}/{}'.format(myFolder, img_name)
-                log.debug("Save picture {} from cam {}".format(img_name,camName))
-                cv2.imwrite(img_path, frame)
+                darknetFound = False
+                results = darknet.detect(net, meta, frame)
+                #log.info(results)
+                for foundThing, score, bounds in results:
+                    myThing = foundThing.decode("utf-8")
+                    if (myThing == "person" ) or (myThing== "car") or (myThing == "truck") or (myThing == "cat") or (myThing == "dog"):
+                        #if score > 0.60:
+                        x, y, w, h = bounds
+                        cv2.rectangle(frame, (int(x - w / 2), int(y - h / 2)), (int(x + w / 2), int(y + h / 2)), (255, 0, 0), thickness=2)
+                        cv2.putText(frame,str(foundThing.decode("utf-8")),(int(x),int(y)),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,0))
+                        log.info("found {} with {:3.1f} %".format(myThing,score * 100))
+                        darknetFound = True
+                if darknetFound == True:
+                    foundSomeThing = True
+                    timestampNow =  time.perf_counter() 
+                    timediff = timestampNow - timestampLast
+                    log.debug("Motion time {} ".format(timediff))
+                    if timediff >= 1:
+                        timestampLast = timestampNow
+                        img_name = datetime.datetime.today().strftime('%Y-%m-%d_%H_%M_%S.%f') + '.jpg'
+                        myFolder = str(myData.img_path) +"/" + datetime.datetime.now().strftime('%Y-%m-%d')
+                        if not os.path.isdir(myFolder):
+                            log.info('create folder {}'.format(myFolder))
+                            os.makedirs(myFolder)
+                        img_path = '{}/{}'.format(myFolder, img_name)
+                        log.info("Save picture {} from cam {}".format(img_name,args.cam))
+                        if cv2.imwrite(img_path, frame) == False:
+                            log.error('Image write fail !!!!!!!!')
             motion = False
         vcap.release()
+        if foundSomeThing == True:
+            #backup file
+            backupFile = '/home/mandl/disk/video/backup/' + args.cam + "_" + os.path.basename(name)
+            log.info("Backup file to {}".format(name))
+            os.rename(name,backupFile)
 
+            #or.rename(name,)
+        else:
+            #remove file
+            log.info("Remove file {}".format(name))
+            os.remove(name)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Motion detect')
-    parser.add_argument('--cam', help='cam1', default='cam1')
+    parser.add_argument('--cam', help='Foldername  with mp4 recordings', default='cam1')
     parser.add_argument('--delta-threshold', default=int(10))
     parser.add_argument('--enable-annotate', help='Draw detected regions to image', action='store_true', default=True)
     parser.add_argument('--min-area', default=int(5000))
+    log.info("*************** start new run ***********************")
     args = parser.parse_args()
     camName = args.cam
     log.debug(args)
     start(args)
+    log.info("*************** ready *******************************")

@@ -42,9 +42,6 @@ class METADATA(Structure):
     _fields_ = [("classes", c_int),
                 ("names", POINTER(c_char_p))]
 
-    
-
-#lib = CDLL("/home/pjreddie/documents/darknet/libdarknet.so", RTLD_GLOBAL)
 lib = CDLL("libdarknet.so", RTLD_GLOBAL)
 lib.network_width.argtypes = [c_void_p]
 lib.network_width.restype = c_int
@@ -122,8 +119,16 @@ def classify(net, meta, im):
     res = sorted(res, key=lambda x: -x[1])
     return res
 
-def detect(net, meta, im, thresh=.5, hier_thresh=.5, nms=.45):
-    #im = load_image(image, 0, 0)
+def detect(net, meta, imCv, thresh=.5, hier_thresh=.5, nms=.45):
+
+    arr = imCv.transpose(2,0,1)
+    c = arr.shape[0]
+    h = arr.shape[1]
+    w = arr.shape[2]
+    arr = (arr/255.0).flatten()
+    data = c_array(c_float, arr)
+    im = IMAGE(w,h,c,data)
+
     num = c_int(0)
     pnum = pointer(num)
     predict_image(net, im)
@@ -141,16 +146,4 @@ def detect(net, meta, im, thresh=.5, hier_thresh=.5, nms=.45):
     #free_image(im)
     free_detections(dets, num)
     return res
-    
-#if __name__ == "__main__":
-    #net = load_net("cfg/densenet201.cfg", "/home/pjreddie/trained/densenet201.weights", 0)
-    #im = load_image("data/wolf.jpg", 0, 0)
-    #meta = load_meta("cfg/imagenet1k.data")
-    #r = classify(net, meta, im)
-    #print r[:10]
-    #net = load_net("cfg/tiny-yolo.cfg", "tiny-yolo.weights", 0)
-    #meta = load_meta("cfg/coco.data")
-    #r = detect(net, meta, "data/dog.jpg")
-    #print r
-    
 
