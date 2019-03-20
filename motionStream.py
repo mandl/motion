@@ -2,7 +2,7 @@
 # 
 
 import logging
-logging.basicConfig(filename='/home/mandl/motion/motion.log',format='%(asctime)s %(message)s', level=logging.INFO)
+logging.basicConfig(filename='/home/mandl/motion/motion.log',format='%(process)s    %(asctime)s %(message)s', level=logging.INFO)
 log = logging.getLogger('')
 import datetime
 import argparse
@@ -49,12 +49,11 @@ class ConfigData:
 
     def log(self):
         log.info('Data: x {} y {} w {} h {}'.format(self.x,self.y,self.w,self.h))
-        log.info('Cam stream:  {}'.format(self.stream))
         log.info('Motion path: {}'.format(self.img_path))
         log.info('ROI path:    {}'.format(self.roiView_path))
         log.info('Live path:   {}'.format(self.liveView_path))
         log.info('Root path:   {}'.format(self.rootPath))
-        log.info('CamName:     {}'.format(self.camName))
+        log.info('Cam name:    {}'.format(self.camName))
 
 myData = ConfigData()
 
@@ -68,7 +67,14 @@ def annotate_frame(frame, area, contour,offsetX,offsetY):
     cv2.rectangle(frame, ( offsetX + x, offsetY + y), (offsetX + x + w, offsetY + y + h), (255, 255, 255), 1)
     #cv2.putText(frame, str(area), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
     return frame
-
+def isbw(img):
+    #img is a numpy.ndarray, loaded using cv2.imread
+    if len(img.shape) > 2:
+        looks_like_rgbbw = not False in ((img[:,:,0:1] == img[:,:,1:2]) == (img[:,:,1:2] ==  img[:,:,2:3]))
+        looks_like_hsvbw = not (True in (img[:,:,0:1] > 0) or True in (img[:,:,1:2] > 0))
+        return looks_like_rgbbw or looks_like_hsvbw
+    else:
+        return True
 
 def start(args):
 
@@ -101,9 +107,9 @@ def loop(args):
         log.info("Open file "+ name)
         foundSomeThing = False
         vcap = cv2.VideoCapture(name)
-        log.info("Video width:  {}".format(vcap.get(cv2.CAP_PROP_FRAME_WIDTH)))
-        log.info("Video height: {}".format(vcap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-        log.info("Video fps:    {}".format(round(vcap.get(cv2.CAP_PROP_FPS))))
+        log.debug("Video width:  {}".format(vcap.get(cv2.CAP_PROP_FRAME_WIDTH)))
+        log.debug("Video height: {}".format(vcap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+        log.debug("Video fps:    {}".format(round(vcap.get(cv2.CAP_PROP_FPS))))
         myData.reloadView = True
         myData.updateROI = True
         timestampLast = time.perf_counter()
@@ -113,12 +119,12 @@ def loop(args):
                 log.info("End of file ")
                 break
             if myData.reloadView == True:
-                log.info("Reload view " + args.cam)
+                log.debug("Reload view " + args.cam)
                 cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
                 cv2.imwrite(str(myData.liveView_path), frame)
                 myData.reloadView = False
             if myData.updateROI == True:
-                log.info("Update ROI " + args.cam)
+                log.debug("Update ROI " + args.cam)
                 frameRoiView = frame[myData.y1:myData.y2,myData.x1:myData.x2]
                 #cv2.imwrite(myData.roiView_path, frameRoiView)
                 avg = None
@@ -131,7 +137,7 @@ def loop(args):
             gray = cv2.GaussianBlur(gray, (21, 21), 0)
             # if the average frame is None, initialize it
             if avg is None:
-                log.info("Initialising average frame " + args.cam)
+                log.debug("Initialising average frame " + args.cam)
                 avg = gray.copy().astype("float")
                 continue
             # accumulate the weighted average between the current frame and
@@ -163,12 +169,14 @@ def loop(args):
                 for foundThing, score, bounds in results:
                     myThing = foundThing.decode("utf-8")
                     if (myThing == "person" ) or (myThing== "car") or (myThing == "truck") or (myThing == "cat") or (myThing == "dog"):
-                        #if score > 0.60:
-                        x, y, w, h = bounds
-                        cv2.rectangle(frame, (int(x - w / 2), int(y - h / 2)), (int(x + w / 2), int(y + h / 2)), (255, 0, 0), thickness=2)
-                        cv2.putText(frame,str(foundThing.decode("utf-8")),(int(x),int(y)),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,0))
-                        log.info("found {} with {:3.1f} %".format(myThing,score * 100))
-                        darknetFound = True
+                        if score > 0.65:
+                            if isbw():
+                                log.info("bw image")
+                            x, y, w, h = bounds
+                            cv2.rectangle(frame, (int(x - w / 2), int(y - h / 2)), (int(x + w / 2), int(y + h / 2)), (255, 0, 0), thickness=2)
+                            cv2.putText(frame,str(foundThing.decode("utf-8")),(int(x),int(y)),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,0))
+                            log.info("found {} with {:3.1f} %".format(myThing,score * 100))
+                            darknetFound = True
                 if darknetFound == True:
                     foundSomeThing = True
                     timestampNow =  time.perf_counter() 
@@ -190,7 +198,7 @@ def loop(args):
         if foundSomeThing == True:
             #backup file
             backupFile = '/home/mandl/disk/video/backup/' + args.cam + "_" + os.path.basename(name)
-            log.info("Backup file to {}".format(name))
+            log.info("Backup file to {}".format(backupFile))
             os.rename(name,backupFile)
 
             #or.rename(name,)
