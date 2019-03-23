@@ -32,6 +32,7 @@ class ConfigData:
         self.rootPath = Path("/home/mandl/disk/video")
         self.rootPath2 = Path("/home/mandl/motion")
         self.img_path = self.rootPath2 / "picture" / "motion"
+        self.imgBw_path = self.rootPath2 / "picture" / "bwmotion"
         self.w = 948
         self.h = 351
         self.startTime =datetime.datetime.now()
@@ -49,13 +50,15 @@ class ConfigData:
 
     def log(self):
         log.info('Data: x {} y {} w {} h {}'.format(self.x,self.y,self.w,self.h))
-        log.info('Motion path: {}'.format(self.img_path))
-        log.info('ROI path:    {}'.format(self.roiView_path))
-        log.info('Live path:   {}'.format(self.liveView_path))
-        log.info('Root path:   {}'.format(self.rootPath))
-        log.info('Cam name:    {}'.format(self.camName))
+        log.info('Motion path:  {}'.format(self.img_path))
+        log.info('MotionBw path:{}'.format(self.imgBw_path))
+        log.info('ROI path:     {}'.format(self.roiView_path))
+        log.info('Live path:    {}'.format(self.liveView_path))
+        log.info('Root path:    {}'.format(self.rootPath))
+        log.info('Cam name:     {}'.format(self.camName))
 
 myData = ConfigData()
+
 
 def annotate_frame(frame, area, contour,offsetX,offsetY):
     #timestamp = datetime.datetime.now()
@@ -104,7 +107,7 @@ def loop(args):
     files = glob.glob(str(myMp4))
     files.sort(key=os.path.getmtime)
     for name in files:
-        log.info("Open file "+ name)
+        log.info("Open file   "+ name)
         foundSomeThing = False
         vcap = cv2.VideoCapture(name)
         log.debug("Video width:  {}".format(vcap.get(cv2.CAP_PROP_FRAME_WIDTH)))
@@ -116,7 +119,7 @@ def loop(args):
         while True:
             ret, frame = vcap.read()
             if ret==False:
-                log.info("End of file ")
+                log.debug("End of file ")
                 break
             if myData.reloadView == True:
                 log.debug("Reload view " + args.cam)
@@ -164,18 +167,20 @@ def loop(args):
 
             if motion:
                 darknetFound = False
+                bwImageFound = False
                 results = darknet.detect(net, meta, frame)
                 #log.info(results)
                 for foundThing, score, bounds in results:
                     myThing = foundThing.decode("utf-8")
                     if (myThing == "person" ) or (myThing== "car") or (myThing == "truck") or (myThing == "cat") or (myThing == "dog"):
                         if score > 0.65:
-                            if isbw():
+                            if isbw(frame):
                                 log.info("bw image")
+                                bwImageFound = True
                             x, y, w, h = bounds
                             cv2.rectangle(frame, (int(x - w / 2), int(y - h / 2)), (int(x + w / 2), int(y + h / 2)), (255, 0, 0), thickness=2)
                             cv2.putText(frame,str(foundThing.decode("utf-8")),(int(x),int(y)),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,0))
-                            log.info("found {} with {:3.1f} %".format(myThing,score * 100))
+                            log.info("{} found {} with {:3.1f} %".format(args.cam,myThing,score * 100))
                             darknetFound = True
                 if darknetFound == True:
                     foundSomeThing = True
@@ -185,7 +190,10 @@ def loop(args):
                     if timediff >= 1:
                         timestampLast = timestampNow
                         img_name = datetime.datetime.today().strftime('%Y-%m-%d_%H_%M_%S.%f') + '.jpg'
-                        myFolder = str(myData.img_path) +"/" + datetime.datetime.now().strftime('%Y-%m-%d')
+                        if bwImageFound == True:
+                            myFolder = str(myData.imgBw_path) +"/" + datetime.datetime.now().strftime('%Y-%m-%d')
+                        else:
+                            myFolder = str(myData.img_path) +"/" + datetime.datetime.now().strftime('%Y-%m-%d')
                         if not os.path.isdir(myFolder):
                             log.info('create folder {}'.format(myFolder))
                             os.makedirs(myFolder)
