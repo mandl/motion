@@ -1,6 +1,6 @@
 /*
     Heizung
-    
+
     Copyright (C) 2018-2019 Mandl
 
     This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@ const fs = require('fs');
 const express = require('express');
 const path = require('path');
 const jsonBody = require('body/json');
-const Rest = require('connect-rest');
+//const Rest = require('connect-rest');
 const bodyParser = require('body-parser');
 const { logger, logfolder} = require('./logger');
 const configData = require('./config.json');
@@ -113,7 +113,6 @@ app.get('/cam3view', function(req, res) {
 // renter log page
 app.get('/log', function(req, res) {
 	var logtext = fs.readFileSync(logfolder(),'utf8')
-	
 	logtext = logtext.replace(/\n/g,'<br>');
 
 	res.render('logfile', { layout:'main', title: 'Log', logdata:logtext});
@@ -140,14 +139,9 @@ app.post('/admindata', function(req, res) {
 
 // render motion page
 app.get('/motion', function(req, res) {
-	
 	var day = req.query.day;
 	var index = req.query.index;
 	var n = 0;
-	
-	// console.log(day);
-	// console.log(index);
-	
 	if (day == null)
 	{
 		day= dayFolder;
@@ -156,7 +150,6 @@ app.get('/motion', function(req, res) {
 	{
 		dayFolder=day;
 	}
-	
 	if (index == null)
 	{
 		index= recentIndex;
@@ -165,37 +158,36 @@ app.get('/motion', function(req, res) {
 	{
 		recentIndex = index;
 	}
-	
 	n = index * showImageCount;
-	
-	
-	var files = fs.readdirSync(path.join(__dirname,'picture','motion',day));
-	
-	var pagiCount = files.length / showImageCount;
-	var motionFiles = {"data":[]};
-	var FileCount = files.length;
-	var minFiles = files.slice(n,n + showImageCount);
-	for( i in minFiles)
-	{
-		var me = {"name":minFiles[i],"folder":day};
-		motionFiles.data.push(me);
-	}	
-	
-	var nextIndex = parseInt(index, 10) + 1;
-	var prevIndex = parseInt(index, 10) - 1;
-	res.render('motion', { layout:'main', title: 'Motion',fileNames:motionFiles, fileCount:FileCount,fileStart:n,fileStop:n+showImageCount,day:day,index:nextIndex,prevIndex:prevIndex,pagiCount:pagiCount});
+	try {
+	    var files = fs.readdirSync(path.join(__dirname,'picture','motion',day));
+	    var pagiCount = files.length / showImageCount;
+	    var motionFiles = {"data":[]};
+	    var FileCount = files.length;
+	    var minFiles = files.slice(n,n + showImageCount);
+	    for( i in minFiles)
+	    {
+		    var me = {"name":minFiles[i],"folder":day};
+		    motionFiles.data.push(me);
+	    }
+	    var nextIndex = parseInt(index, 10) + 1;
+	    var prevIndex = parseInt(index, 10) - 1;
+	    res.render('motion', { layout:'main', title: 'Motion',fileNames:motionFiles, fileCount:FileCount,fileStart:n,fileStop:n+showImageCount,day:day,index:nextIndex,prevIndex:prevIndex,pagiCount:pagiCount});
+        }
+	catch (e) {
+		res.render('motion', { layout:'main', title: 'Motion'});
+	}
 });
 
 // Clear all pictures
 app.get('/clearPicture', function(req, res) {
-	
+
 	try {
-		
 	var day = req.query.day;
 	if (day == null)
 	{
 		day= dayFolder;
-	}	
+	}
 	fs.readdir(path.join(__dirname,'picture','motion',day), (err, files) => {
 		  if (err) throw err;
 
@@ -203,32 +195,27 @@ app.get('/clearPicture', function(req, res) {
 		    fs.unlinkSync(path.join(__dirname, 'picture','motion',day, file));
 		  }
 		});
-	} 
+	}
 	catch (ex){
 		logger.error(ex);
-		
 	}
 	setTimeout(function(){
-		
 		res.send('ok');
-		res.end();	
-		  
+		res.end();
 	}, 10 * 1000);
-		
 });
 
 // render motion days page
 app.get('/motiondays', function(req, res) {
-	
+
 	var files = fs.readdirSync(path.join(__dirname,'picture','motion'));
-	
 	var motionFiles = {"data":[]};
 	for( i in files)
 	{
 		var me = {"name":files[i]};
 		motionFiles.data.push(me);
-	}	
-	
+	}
+
 	// console.log(motionFiles);
 	res.render('motiondays', { layout:'main', title: 'Days',fileNames:motionFiles});
 });

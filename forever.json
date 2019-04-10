@@ -1,0 +1,40 @@
+[
+  {
+    "uid": "server",
+    "append": true,
+    "watch": false,
+    "script": "app.js",
+    "sourceDir": "/home/mandl/motion",
+    "workingDir": "/home/mandl/motion"
+  },
+  {
+    "uid": "cam2watch",
+    "append": true,
+    "watch": false,
+    "command":"python3",
+    "script": "motionStream.py",
+    "sourceDir": "/home/mandl/motion",
+    "workingDir": "/home/mandl/motion",
+    "args": ["--cam","cam1","--enable-watch"]
+  },
+  {
+    "uid": "cam1watch",
+    "append": true,
+    "watch": false,
+    "command":"python3",
+    "script": "motionStream.py",
+    "sourceDir": "/home/mandl/motion",
+    "workingDir": "/home/mandl/motion",
+    "args": ["--cam","cam2","--enable-watch"]
+  },
+  {
+    "uid": "cam3watch",
+    "append": true,
+    "watch": false,
+    "command":"python3",
+    "script": "motionStream.py",
+    "sourceDir": "/home/mandl/motion",
+    "workingDir": "/home/mandl/motion",
+    "args": ["--cam","cam3","--enable-watch"]
+  }
+]
