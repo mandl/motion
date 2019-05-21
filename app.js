@@ -24,7 +24,8 @@ const jsonBody = require('body/json');
 //const Rest = require('connect-rest');
 const bodyParser = require('body-parser');
 const { logger, logfolder} = require('./logger');
-const configData = require('./config.json');
+const configFileName = './config.json'
+const configData = require(configFileName);
 
 const showImageCount = 99;
 var dayFolder;
@@ -133,6 +134,11 @@ app.post('/admindata', function(req, res) {
 	var level=req.body.level;
 	var threshold=req.body.threshold;
 	var area=req.body.area;
+	console.log(annotate,level,threshold,area)
+	configData.level = level
+	configData.threshold = threshold
+	configData.area = area
+	fs.writeFileSync(configFileName, JSON.stringify(configData))
 
 	res.redirect('/');
 });
@@ -232,21 +238,30 @@ app.get('/save', function(req, res) {
 	if ((startX != null) && (startY != null) && (w != null) && ( h != null))
 	{
 		// console.log(startX,startY,w,h);
-		if( cam=='CAMPI')
-		{
-			child.stdin.write('roi,' + startX + ',' + startY + ',' + w + ',' + h +'\n');
-		}
 		if( cam=="CAM1")
 		{
-			childStream1.stdin.write('roi,' + startX + ',' + startY + ',' + w + ',' + h +'\n');
+			configData.cam1.x = startX
+			configData.cam1.y = startY
+			configData.cam1.h = h
+			configData.cam1.w = w
+			fs.writeFileSync(configFileName, JSON.stringify(configData))
 		}
 		if( cam=="CAM2")
 		{
-			childStream2.stdin.write('roi,' + startX + ',' + startY + ',' + w + ',' + h +'\n');
+			configData.cam2.x = startX
+			configData.cam2.y = startY
+			configData.cam2.h = h
+			configData.cam2.w = w
+			fs.writeFileSync(configFileName, JSON.stringify(configData))
+			
 		}
 		if( cam=="CAM3")
 		{
-			childStream3.stdin.write('roi,' + startX + ',' + startY + ',' + w + ',' + h +'\n');
+			configData.cam3.x = startX
+			configData.cam3.y = startY
+			configData.cam3.h = h
+			configData.cam3.w = w
+			fs.writeFileSync(configFileName, JSON.stringify(configData))
 		}
 	}
 	res.send('ok');
