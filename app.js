@@ -21,7 +21,6 @@ const fs = require('fs');
 const express = require('express');
 const path = require('path');
 const jsonBody = require('body/json');
-//const Rest = require('connect-rest');
 const bodyParser = require('body-parser');
 const { logger, logfolder} = require('./logger');
 const configFileName = './config.json'
@@ -123,7 +122,10 @@ app.get('/log', function(req, res) {
 // renter admin page
 app.get('/admin', function(req, res) {
 
-	res.render('admin', { layout:'main', title: 'Admin',level:"",area:"",threshold:""});
+        let rawdata = fs.readFileSync(configFileName);  
+        let configData = JSON.parse(rawdata);  
+        console.log(configData);  
+	res.render('admin', { layout:'main', title: 'Admin',level:configData.level,area:configData.area,threshold:configData.threshold});
 
 });
 
@@ -134,13 +136,21 @@ app.post('/admindata', function(req, res) {
 	var level=req.body.level;
 	var threshold=req.body.threshold;
 	var area=req.body.area;
+
+        logger.info('admindata');
 	console.log(annotate,level,threshold,area)
-	configData.level = level
-	configData.threshold = threshold
-	configData.area = area
+	configData.level = Number(level)
+	configData.threshold = Number(threshold)
+	configData.area = Number(area)
+        if(annotate === 'On'){
+            configData.annotate =  true
+        }
+         else {
+            configData.annotate =  false
+        }
 	fs.writeFileSync(configFileName, JSON.stringify(configData))
 
-	res.redirect('/');
+	res.redirect('/motion');
 });
 
 // render motion page
@@ -186,29 +196,36 @@ app.get('/motion', function(req, res) {
 });
 
 // Clear all pictures
-app.get('/clearPicture', function(req, res) {
+app.get('/motiondelete', function(req, res) {
 
-	try {
 	var day = req.query.day;
-	if (day == null)
+	if (day !== null)
 	{
-		day= dayFolder;
-	}
-	fs.readdir(path.join(__dirname,'picture','motion',day), (err, files) => {
-		  if (err) throw err;
+         try {
+
+          if (fs.existsSync(path.join(__dirname,'picture','motion',day)))
+          {	
+               fs.readdir(path.join(__dirname,'picture','motion',day), (err, files) => {
+         	  if (err) throw err;
 
 		  for (const file of files) {
 		    fs.unlinkSync(path.join(__dirname, 'picture','motion',day, file));
 		  }
-		});
-	}
-	catch (ex){
+                  fs.rmdirSync(path.join(__dirname, 'picture','motion',day))
+                   res.redirect('/motion/motiondays');
+	    });
+ 	   }
+         }
+         catch (ex){
 		logger.error(ex);
-	}
-	setTimeout(function(){
-		res.send('ok');
-		res.end();
-	}, 10 * 1000);
+	 }
+        }
+	
+        //res.redirect('/motiondays');
+        //setTimeout(function(){
+	//	res.send('ok');
+	//	res.end();
+	//}, 10 * 1000);
 });
 
 // render motion days page
@@ -226,6 +243,22 @@ app.get('/motiondays', function(req, res) {
 	res.render('motiondays', { layout:'main', title: 'Days',fileNames:motionFiles});
 });
 
+// render motion days page
+app.get('/motiondaysdelete', function(req, res) {
+
+        var files = fs.readdirSync(path.join(__dirname,'picture','motion'));
+        var motionFiles = {"data":[]};
+        for( i in files)
+        {
+                var me = {"name":files[i]};
+                motionFiles.data.push(me);
+        }
+
+        // console.log(motionFiles);
+        res.render('motiondeletedays', { layout:'main', title: 'Days',fileNames:motionFiles});
+});
+
+
 // save new ROI
 app.get('/save', function(req, res) {
 		
@@ -237,31 +270,31 @@ app.get('/save', function(req, res) {
 	
 	if ((startX != null) && (startY != null) && (w != null) && ( h != null))
 	{
-		// console.log(startX,startY,w,h);
-		if( cam=="CAM1")
+		//console.log(cam,startX,startY,w,h);
+		if( cam=="cam1")
 		{
-			configData.cam1.x = startX
-			configData.cam1.y = startY
-			configData.cam1.h = h
-			configData.cam1.w = w
-			fs.writeFileSync(configFileName, JSON.stringify(configData))
+			configData.cam1.x = parseInt(startX,10) 
+			configData.cam1.y = parseInt(startY,10)
+			configData.cam1.h = parseInt(h,10)
+			configData.cam1.w = parseInt(w,10)
+			fs.writeFileSync(configFileName, JSON.stringify(configData,null,4))
 		}
-		if( cam=="CAM2")
+		if( cam=="cam2")
 		{
-			configData.cam2.x = startX
-			configData.cam2.y = startY
-			configData.cam2.h = h
-			configData.cam2.w = w
-			fs.writeFileSync(configFileName, JSON.stringify(configData))
+			configData.cam2.x = parseInt(startX,10)
+			configData.cam2.y = parseInt(startY,10)
+			configData.cam2.h = parseInt(h,10)
+			configData.cam2.w = parseInt(w,10)
+			fs.writeFileSync(configFileName, JSON.stringify(configData,null,4))
 			
 		}
-		if( cam=="CAM3")
+		if( cam=="cam3")
 		{
-			configData.cam3.x = startX
-			configData.cam3.y = startY
-			configData.cam3.h = h
-			configData.cam3.w = w
-			fs.writeFileSync(configFileName, JSON.stringify(configData))
+			configData.cam3.x =  parseInt(startX,10)
+			configData.cam3.y =  parseInt(startY,10)
+			configData.cam3.h =  parseInt(h,10)
+			configData.cam3.w =  parseInt(w,10)
+			fs.writeFileSync(configFileName, JSON.stringify(configData,null,4))
 		}
 	}
 	res.send('ok');

@@ -47,7 +47,7 @@ class EventProcessor(pyinotify.ProcessEvent):
 
 def process_generator(cls, method):
     def _method_name(self, event):
-        log.info("File name: {} Event Name: {}".format(event.pathname, event.maskname))
+        log.debug("File name: {} Event Name: {}".format(event.pathname, event.maskname))
         time.sleep(3)
         doJob(event.pathname)
     _method_name.__name__ = "process_{}".format(method)
@@ -85,17 +85,17 @@ class ConfigData:
         #self.img_path = '/{}/{}'.format('media','motion')
 
     def log(self):
-        log.info('Data: x {} y {} w {} h {}'.format(self.x,self.y,self.w,self.h))
-        log.info('Motion path:    {}'.format(self.img_path))
-        log.info('MotionBw path:  {}'.format(self.imgBw_path))
-        log.info('ROI path:       {}'.format(self.roiView_path))
-        log.info('Live path:      {}'.format(self.liveView_path))
-        log.info('Root path:      {}'.format(self.rootPath))
-        log.info('Cam name:       {}'.format(self.camName))
-        log.info('Annotate:       {}'.format(self.enable_annotate))
-        log.info('Delta threshold {}'.format(myData.delta_threshold))
-        log.info('Min area        {}'.format(myData.min_area))
-        log.info('Dark score      {}'.format(myData.darkScore))
+        log.debug('Data: x {} y {} w {} h {}'.format(self.x,self.y,self.w,self.h))
+        log.debug('Motion path:    {}'.format(self.img_path))
+        log.debug('MotionBw path:  {}'.format(self.imgBw_path))
+        log.debug('ROI path:       {}'.format(self.roiView_path))
+        log.debug('Live path:      {}'.format(self.liveView_path))
+        log.debug('Root path:      {}'.format(self.rootPath))
+        log.debug('Cam name:       {}'.format(self.camName))
+        log.debug('Annotate:       {}'.format(self.enable_annotate))
+        log.debug('Delta threshold {}'.format(myData.delta_threshold))
+        log.debug('Min area        {}'.format(myData.min_area))
+        log.debug('Dark score      {}'.format(myData.darkScore))
 
 myData = ConfigData()
 
@@ -139,6 +139,17 @@ def start(args):
     myData.log()
 
 
+def readconfig():
+    with open('config.json', 'r') as f:
+        config = json.load(f)
+        cam = myData.camName
+        myData.x = config[cam]['x']
+        myData.y = config[cam]['y']
+        myData.w = config[cam]['w']
+        myData.h = config[cam]['h']
+        myData.update()
+        myData.log()
+
 def watchFolder(args):
     global myData
     for method in EventProcessor._methods:
@@ -170,6 +181,7 @@ def doJob(name):
     doJobStart = time.perf_counter()
     log.info("Open file   "+ name)
     foundSomeThing = False
+    readconfig()
     avg = None
     vcap = cv2.VideoCapture(name)
     log.debug("Video width:  {}".format(vcap.get(cv2.CAP_PROP_FRAME_WIDTH)))
@@ -286,7 +298,7 @@ if __name__ == '__main__':
     parser.add_argument('--enable-annotate', help='Draw detected regions to image', action='store_true', default=True)
     parser.add_argument('--enable-watch', help='Watch folder', action='store_true', default=False)
     parser.add_argument('--min-area', default=int(5000))
-    parser.add_argument('--score', default=float(0.65))
+    parser.add_argument('--score', default=float(0.80))
 
     log.info("*************** start new run ***********************")
     args = parser.parse_args()

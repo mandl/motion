@@ -1,10 +1,10 @@
 {
-   "backup": {
+    "backup": {
         "h": 960,
         "w": 1280,
         "x": 0,
         "y": 0
-   },
+    },
     "cam1": {
         "h": 960,
         "w": 1280,
@@ -12,16 +12,16 @@
         "y": 0
     },
     "cam2": {
-        "h": 960,
-        "w": 1280,
-        "x": 0,
-        "y": 0
+        "h": 808,
+        "w": 678,
+        "x": 413,
+        "y": 138
     },
     "cam3": {
-        "h": 960,
-        "w": 1280,
-        "x": 0,
-        "y": 0
+        "h": 498,
+        "w": 285,
+        "x": 691,
+        "y": 96
     },
     "CAMPI": {
         "h": 211,
@@ -29,5 +29,9 @@
         "x": 436,
         "y": 481
     },
-    "videoPath": "/home/mandl/disk/video"
+    "videoPath": "/home/mandl/disk/video",
+    "level": null,
+    "threshold": 4,
+    "area": 3000,
+    "annotate": false
 }

@@ -55,7 +55,7 @@ init();
         	return;
         }
         
-        $.get( "save",{  startX: rect.startX, startY: rect.startY, w: rect.w, h: rect.h} , function( data ) {
+        $.get( "save",{  cam: "{{camname}}", startX: rect.startX, startY: rect.startY, w: rect.w, h: rect.h} , function( data ) {
             
             console.log(data);
             location.reload();
