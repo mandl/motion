@@ -1,3 +1,7 @@
+picture
+cfg/yolov3.weights
+weights/
+__pycache__/*
 # Logs
 logs
 *.log
