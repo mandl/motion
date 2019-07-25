@@ -22,6 +22,7 @@ const express = require('express');
 const path = require('path');
 const jsonBody = require('body/json');
 const bodyParser = require('body-parser');
+const cv = require('opencv4nodejs');
 const { logger, logfolder} = require('./logger');
 const configFileName = './config.json'
 const configData = require(configFileName);
@@ -220,12 +221,7 @@ app.get('/motiondelete', function(req, res) {
 		logger.error(ex);
 	 }
         }
-	
-        //res.redirect('/motiondays');
-        //setTimeout(function(){
-	//	res.send('ok');
-	//	res.end();
-	//}, 10 * 1000);
+
 });
 
 // render motion days page
@@ -259,6 +255,19 @@ app.get('/motiondaysdelete', function(req, res) {
 });
 
 
+function updateImage(x,y,h,w,name)
+{
+
+
+   const mat = cv.imread(__dirname+'/picture/config/view/'+ name +'.png');
+
+   mat.drawRectangle( new cv.Point(x,y), new cv.Point(x+w, y+h), new cv.Vec(255, 0, 0),8);
+
+   cv.imwrite(__dirname+'/picture/config/view/'+ name + '.png', mat);
+
+}
+
+
 // save new ROI
 app.get('/save', function(req, res) {
 		
@@ -278,6 +287,7 @@ app.get('/save', function(req, res) {
 			configData.cam1.h = parseInt(h,10)
 			configData.cam1.w = parseInt(w,10)
 			fs.writeFileSync(configFileName, JSON.stringify(configData,null,4))
+                        updateImage(configData.cam1.x,configData.cam1.y,configData.cam1.h,configData.cam1.w,cam)
 		}
 		if( cam=="cam2")
 		{
@@ -286,6 +296,7 @@ app.get('/save', function(req, res) {
 			configData.cam2.h = parseInt(h,10)
 			configData.cam2.w = parseInt(w,10)
 			fs.writeFileSync(configFileName, JSON.stringify(configData,null,4))
+                        updateImage(configData.cam2.x,configData.cam2.y,configData.cam2.h,configData.cam2.w,cam)
 			
 		}
 		if( cam=="cam3")
@@ -295,6 +306,7 @@ app.get('/save', function(req, res) {
 			configData.cam3.h =  parseInt(h,10)
 			configData.cam3.w =  parseInt(w,10)
 			fs.writeFileSync(configFileName, JSON.stringify(configData,null,4))
+                        updateImage(configData.cam3.x,configData.cam3.y,configData.cam3.h,configData.cam3.w,cam)
 		}
 	}
 	res.send('ok');

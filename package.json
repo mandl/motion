@@ -29,6 +29,7 @@
     "jquery": "^3.4.1",
     "mathjs": "^4.4.2",
     "morgan": "^1.9.1",
+    "opencv4nodejs": "^5.1.0",
     "request": "^2.88.0",
     "winston": "^3.2.1"
   }
