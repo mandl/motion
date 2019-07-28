@@ -67,6 +67,7 @@ class ConfigData:
 
         self.rootPath = Path("/home/mandl/disk/video")
         self.rootPath2 = Path("/home/mandl/motion")
+        self.videoTestPath = ""
         self.img_path = self.rootPath2 / "picture" / "motion"
         self.imgBw_path = self.rootPath2 / "picture" / "bwmotion"
         self.w = 948
@@ -100,15 +101,15 @@ class ConfigData:
 myData = ConfigData()
 
 
-def annotate_frame(frame, area, contour,offsetX,offsetY):
-    #timestamp = datetime.datetime.now()
-    #ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
+def annotate_frame(frame, area, contour,offsetX,offsetY,cX,cY):
+
     (x, y, w, h) = cv2.boundingRect(contour)
     # show ROI
     #cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
     # show motion
     cv2.rectangle(frame, ( offsetX + x, offsetY + y), (offsetX + x + w, offsetY + y + h), (255, 255, 255), 1)
-    #cv2.putText(frame, str(area), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+    # draw point
+    cv2.circle(frame, (offsetX + cX, offsetY + cY), 7, (255, 255, 255), -1)
     return frame
 
 def isbw(img):
@@ -125,7 +126,7 @@ def start(args):
     global myData
     with open('config.json', 'r') as f:
         config = json.load(f)
-
+        log.info("config:: {}".format(config))
         myData.x = config[args.cam]['x']
         myData.y = config[args.cam]['y']
         myData.w = config[args.cam]['w']
@@ -135,6 +136,8 @@ def start(args):
         myData.delta_threshold = args.delta_threshold
         myData.min_area = args.min_area
         myData.darkScore = args.score
+        myData.enable_test = args.enable_test
+        myData.videoTestPath = Path(config['videoTestPath'])
         myData.update()
     myData.log()
 
@@ -147,6 +150,7 @@ def readconfig():
         myData.y = config[cam]['y']
         myData.w = config[cam]['w']
         myData.h = config[cam]['h']
+        #myData.videoTestPath = config[rootPath]
         myData.update()
         myData.log()
 
@@ -165,7 +169,12 @@ def watchFolder(args):
 
 
 def loopOverFiles(args):
-    myMp4 = myData.rootPath / args.cam / '*.mp4'
+    global myData
+    readconfig()
+    if myData.enable_test == True:
+        myMp4 = myData.videoTestPath / '*.mp4'
+    else:
+        myMp4 = myData.rootPath / args.cam / '*.mp4'
     log.info("Loop over this folder {}".format(myMp4))
     files = glob.glob(str(myMp4))
     files.sort(key=os.path.getmtime)
@@ -228,6 +237,8 @@ def doJob(name):
         thresh = cv2.dilate(thresh, None, iterations=2)
         (contours, hierarchy) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         motion = False
+        # save motion points
+        motionPoints = ()
         for c in contours:
             # if the contour is too small, ignore it
             area =  cv2.contourArea(c)
@@ -235,9 +246,14 @@ def doJob(name):
                 continue
             motion = True
             log.debug("Motion detected  Area={} from {}".format(area, myData.camName))
+            # compute the center of the contour
+            M = cv2.moments(c)
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+            motionPoints += (cX,cY),
             # draw the text and timestamp on the frame
             if myData.enable_annotate:
-                frame = annotate_frame( frame, area, c, myData.x, myData.y)
+                frame = annotate_frame( frame, area, c, myData.x, myData.y,cX,cY)
 
         if (motion == True) and (isbw(frame)== False):
             darknetFound = False
@@ -254,10 +270,19 @@ def doJob(name):
                         #    log.info("bw image")
                         #    bwImageFound = True
                         x, y, w, h = bounds
-                        cv2.rectangle(frame, (int(x - w / 2), int(y - h / 2)), (int(x + w / 2), int(y + h / 2)), (255, 0, 0), thickness=2)
-                        cv2.putText(frame,str(foundThing.decode("utf-8")),(int(x),int(y)),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,0))
-                        log.info("{} found {} with {:3.1f} % time {:3.4f}".format(args.cam,myThing,score * 100,darkTimeStop-darkTimeStart))
-                        darknetFound = True
+                        cx1 = int(x - w / 2)
+                        cy1 = int(y - h / 2)
+                        cx2 = int(x + w / 2)
+                        cy2 = int(y + h / 2)
+                        for motionPoint in motionPoints:
+                            if ( cx1 < motionPoint[0] < cx2) and ( cy1 < motionPoint[1] < cy2):
+                                # point inside rect
+                                log.debug("Rect: {} {} {} {} Points {}".format(cx1,cy1,cx2,cy2,motionPoints))
+                                cv2.rectangle(frame, (cx1, cy1), (cx2, cy2), (255, 0, 0), thickness=2)
+                                cv2.putText(frame,str(foundThing.decode("utf-8")),(int(x),int(y)),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,0))
+                                log.info("{} found {} with {:3.1f} % time {:3.4f}".format(args.cam,myThing,score * 100,darkTimeStop-darkTimeStart))
+                                darknetFound = True
+                                break
             if darknetFound == True:
                 foundSomeThing = True
                 timestampNow =  time.perf_counter()
@@ -297,6 +322,7 @@ if __name__ == '__main__':
     parser.add_argument('--delta-threshold', default=int(10))
     parser.add_argument('--enable-annotate', help='Draw detected regions to image', action='store_true', default=True)
     parser.add_argument('--enable-watch', help='Watch folder', action='store_true', default=False)
+    parser.add_argument('--enable-test', help='Use the test folder', action='store_true', default=False)
     parser.add_argument('--min-area', default=int(5000))
     parser.add_argument('--score', default=float(0.80))
 

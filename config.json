@@ -30,6 +30,7 @@
         "y": 481
     },
     "videoPath": "/home/mandl/disk/video",
+    "videoTestPath":"/home/mandl/disk/video/backup",
     "level": null,
     "threshold": 4,
     "area": 3000,
