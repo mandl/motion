@@ -188,7 +188,7 @@ def doJob(name):
 
     global myData
     doJobStart = time.perf_counter()
-    log.info("Open file   "+ name)
+    log.debug("Open file   "+ name)
     foundSomeThing = False
     readconfig()
     avg = None
@@ -275,14 +275,15 @@ def doJob(name):
                         cx2 = int(x + w / 2)
                         cy2 = int(y + h / 2)
                         for motionPoint in motionPoints:
-                            if ( cx1 < motionPoint[0] < cx2) and ( cy1 < motionPoint[1] < cy2):
+                            if ( cx1 <= motionPoint[0] <= cx2) and ( cy1 <= motionPoint[1] <= cy2):
                                 # point inside rect
                                 log.debug("Rect: {} {} {} {} Points {}".format(cx1,cy1,cx2,cy2,motionPoints))
-                                cv2.rectangle(frame, (cx1, cy1), (cx2, cy2), (255, 0, 0), thickness=2)
+                                #cv2.rectangle(frame, (cx1, cy1), (cx2, cy2), (255, 0, 0), thickness=2)
                                 cv2.putText(frame,str(foundThing.decode("utf-8")),(int(x),int(y)),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,0))
                                 log.info("{} found {} with {:3.1f} % time {:3.4f}".format(args.cam,myThing,score * 100,darkTimeStop-darkTimeStart))
                                 darknetFound = True
                                 break
+                        cv2.rectangle(frame, (cx1, cy1), (cx2, cy2), (255, 0, 0), thickness=2) 
             if darknetFound == True:
                 foundSomeThing = True
                 timestampNow =  time.perf_counter()
@@ -311,10 +312,10 @@ def doJob(name):
         os.rename(name,backupFile)
     else:
         #remove file
-        log.info("Remove file {}".format(name))
+        log.debug("Remove file {}".format(name))
         os.remove(name)
     doJobStop = time.perf_counter()
-    log.info("File {} Runtime {:.2f} min for {}".format(name, (doJobStop - doJobStart)/ 60, myData.camName))
+    log.debug("File {} Runtime {:.2f} min for {}".format(name, (doJobStop - doJobStart)/ 60, myData.camName))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Motion detect')
