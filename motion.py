@@ -12,10 +12,19 @@ import select
 import sys
 import fcntl
 import selectors
+import darknet
 import json
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import cv2
+
+
+# load darknet
+mycfg = "cfg/yolov3-tiny.cfg".encode('utf8')
+myweights = "yolov3-tiny.weights".encode('utf8')
+myCocoData = "cfg/coco.data"
+net = darknet.load_net(mycfg, myweights, 0)
+meta = darknet.load_meta(myCocoData.encode('utf8'))
 
 # Camera name
 camName = "CAMPI"
@@ -56,19 +65,16 @@ def annotate_frame(frame, area, contour,offsetX,offsetY):
     ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
     (x, y, w, h) = cv2.boundingRect(contour)
     # show ROI
-    cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
+    #cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
     
     # show motion
     cv2.rectangle(frame, ( offsetX + x, offsetY + y), (offsetX + x + w, offsetY + y + h), (255, 255, 255), 1)
     
-    cv2.putText(frame, str(area), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+    #cv2.putText(frame, str(area), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
     return frame
 
 
-def start(args):
-    
-    
-    
+def start(args):    
     with open('config.json', 'r') as f:
         config = json.load(f)
 
@@ -77,8 +83,6 @@ def start(args):
         myData.w = config[camName]['w']
         myData.h = config[camName]['h']
         myData.update()
-        
-
     camera = PiCamera()
     camera.resolution = args.resolution
     camera.framerate = args.fps
@@ -93,10 +97,10 @@ def loop(args, camera):
     global myData
     myData.log()
     timestampLast =  time.perf_counter()
-    
+    #darknet.srand(2222222)
+    darknet.nnp_initialize() 
     for f in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True):
         frame = f.array
-        
         if myData.reloadView == True:
             log.info("Reload view")
             cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
@@ -158,7 +162,35 @@ def loop(args, camera):
             timestampNow =  time.perf_counter() 
             timediff = timestampNow - timestampLast
             log.debug("Motion time {} ".format(timediff))
+            #darkTimeStart = time.perf_counter()
+            #results = darknet.detect(net, meta, frame)
+            #darkTimeStop = time.perf_counter()
+            #log.info(results)
+            #for foundThing, score, bounds in results:
+            #    myThing = foundThing.decode("utf-8")
+            #    log.info(myThing)
+            #    x, y, w, h = bounds
+            #    cx1 = int(x - w / 2)
+            #    cy1 = int(y - h / 2)
+            #    cx2 = int(x + w / 2)
+            #    cy2 = int(y + h / 2)
+            #    cv2.rectangle(frame, (cx1, cy1), (cx2, cy2), (0, 0, 255), thickness=2)
             if timediff >= 1:
+                darkTimeStart = time.perf_counter()
+                #darknet.nnp_initialize()
+                #results = darknet.detect(net, meta, frame)
+                #darkTimeStop = time.perf_counter()
+                #log.info(darkTimeStop - darkTimeStart)
+                #log.info(results)
+                #for foundThing, score, bounds in results:
+                #    myThing = foundThing.decode("utf-8")
+                #    log.info(myThing)
+                #    x, y, w, h = bounds
+                #    cx1 = int(x - w / 2)
+                #    cy1 = int(y - h / 2)
+                #    cx2 = int(x + w / 2)
+                #    cy2 = int(y + h / 2)
+                #    cv2.rectangle(frame, (cx1, cy1), (cx2, cy2), (0, 0, 255), thickness=2)
                 timestampLast = timestampNow
                 img_name = datetime.datetime.today().strftime('%Y-%m-%d_%H_%M_%S.%f') + '.jpg'
                 myFolder = myData.img_path +"/" + datetime.datetime.now().strftime('%Y-%m-%d')
@@ -215,7 +247,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Motion detect')
     parser.add_argument('--resolution', help='e.g 640x480', default=parse_res('1280x720'))
     parser.add_argument('--fps', help='Framerate e.g: 18', default=int('18'))
-    parser.add_argument('--delta-threshold', default=int(5))
+    parser.add_argument('--delta-threshold', default=int(10))
     parser.add_argument('--min-area', default=int(5000))
     
     args = parser.parse_args()

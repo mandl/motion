@@ -1,7 +1,7 @@
 /*
     Heizung
     
-    Copyright (C) 2018 Mandl
+    Copyright (C) 2018-2019 Mandl
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -153,7 +153,7 @@ app.get('/', require('connect-ensure-login').ensureLoggedIn(), function(req, res
 	}
 	setTimeout(function(){
 		
-		res.render('livertsp', { layout:'main', title: 'Live view',camname:'CAM1'});
+		res.render('live', { layout:'main', title: 'Live view',camname:'CAM1'});
 		  
 		}, 2 * 1000);
 });
@@ -168,7 +168,7 @@ app.get('/cam2view', require('connect-ensure-login').ensureLoggedIn(), function(
 	}
 	setTimeout(function(){
 		
-		res.render('livertsp', { layout:'main', title: 'Live view',camname:'CAM2'});
+		res.render('live', { layout:'main', title: 'Live view',camname:'CAM2'});
 		  
 		}, 2 * 1000);
 });
@@ -263,36 +263,6 @@ app.get('/motion', require('connect-ensure-login').ensureLoggedIn(), function(re
 	res.render('motion', { layout:'main', title: 'Motion',fileNames:motionFiles, fileCount:FileCount,fileStart:n,fileStop:n+showImageCount,day:day,index:nextIndex,prevIndex:prevIndex,pagiCount:pagiCount});
 });
 
-// Clear all pictures
-app.get('/clearPicture', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
-	
-	try {
-		
-	var day = req.query.day;
-	if (day == null)
-	{
-		day= dayFolder;
-	}	
-	fs.readdir(path.join(__dirname,'picture','motion',day), (err, files) => {
-		  if (err) throw err;
-
-		  for (const file of files) {
-		    fs.unlinkSync(path.join(__dirname, 'picture','motion',day, file));
-		  }
-		});
-	} 
-	catch (ex){
-		logger.error(ex);
-		
-	}
-	setTimeout(function(){
-		
-		res.send('ok');
-		res.end();	
-		  
-	}, 10 * 1000);
-		
-});
 
 // render motion days page
 app.get('/motiondays', require('connect-ensure-login').ensureLoggedIn(), function(req, res) {
@@ -308,6 +278,50 @@ app.get('/motiondays', require('connect-ensure-login').ensureLoggedIn(), functio
 	
 	// console.log(motionFiles);
 	res.render('motiondays', { layout:'main', title: 'Days',fileNames:motionFiles});
+});
+
+
+// render motion days page
+app.get('/motiondaysdelete', function(req, res) {
+
+        var files = fs.readdirSync(path.join(__dirname,'picture','motion'));
+        var motionFiles = {"data":[]};
+        for( i in files)
+        {
+                var me = {"name":files[i]};
+                motionFiles.data.push(me);
+        }
+
+        // console.log(motionFiles);
+        res.render('motiondeletedays', { layout:'main', title: 'Days',fileNames:motionFiles});
+});
+
+// Clear all pictures
+app.get('/motiondelete', function(req, res) {
+
+	var day = req.query.day;
+	if (day !== null)
+	{
+         try {
+
+          if (fs.existsSync(path.join(__dirname,'picture','motion',day)))
+          {	
+               fs.readdir(path.join(__dirname,'picture','motion',day), (err, files) => {
+         	  if (err) throw err;
+
+		  for (const file of files) {
+		    fs.unlinkSync(path.join(__dirname, 'picture','motion',day, file));
+		  }
+                  fs.rmdirSync(path.join(__dirname, 'picture','motion',day))
+                   res.redirect('motiondays');
+	    });
+ 	   }
+         }
+         catch (ex){
+		logger.error(ex);
+	 }
+        }
+
 });
 
 // save new ROI
@@ -383,6 +397,7 @@ app.listen(3000, function () {
 });
 
 process.on('exit', function(code) {
+        logger.info('Kill python');
 	child.kill('SIGHUP')
 });
 

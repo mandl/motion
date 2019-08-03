@@ -1,0 +1,21 @@
+<div class="container-fluid">
+<div class="btn-group-vertical">
+<p>Delete Day Folder</p>
+{{#each fileNames.data}}
+  <a href="motiondelete?day={{name}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">{{name}}</a>
+{{/each}}
+</div>
+</div>
+
+
+{{#section 'jquery'}}
+<script type="text/javascript">
+ $(document).ready(function() {
+    $.each($('#navbarNav').find('li'), function() {
+        $(this).toggleClass('active',
+            '/' + $(this).find('a').attr('href') == window.location.pathname);
+    });
+    
+  });
+</script>
+{{/section}}

@@ -18,16 +18,16 @@
         "y": 161
     },
     "CAMPI": {
-        "h": 211,
-        "w": 726,
-        "x": 436,
+        "h": 217,
+        "w": 420,
+        "x": 288,
         "y": 481
     },
     "STREAMCAM1": "rtsp://admin:admin@192.168.178.33:8554/live2.264",
     "STREAMCAM2": "rtsp://admin:admin@192.168.178.36:8554/live2.264",
     "STREAMCAM3": "rtsp://admin:admin@192.168.178.31:8554/live2.264",
-    "piCam": false,
-    "usestreamCam1": true,
-    "usestreamCam2": true,
-    "usestreamCam3": true
+    "piCam": true,
+    "usestreamCam1": false,
+    "usestreamCam2": false,
+    "usestreamCam3": false
 }
