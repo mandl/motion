@@ -1,0 +1,66 @@
+
+<div class="container-fluid">
+<nav aria-label="Page navigation example">
+  <ul class="pagination">
+    <li class="page-item">
+      <a class="page-link" href="?day={{day}}&index={{prevIndex}}" tabindex="-1">Previous</a>
+    </li>
+    <li class="page-item"><a class="page-link" href="#">1</a></li>
+    <li class="page-item"><a class="page-link" href="#">2</a></li>
+    <li class="page-item"><a class="page-link" href="#">3</a></li> 
+    <li class="page-item">
+      <a class="page-link" href="?day={{day}}&index={{index}}">Next</a>
+    </li>
+  </ul>
+</nav>
+</div>
+<div class="container-fluid">
+  <h2>Motion Gallery {{day}}</h2>
+  <p>Picture count: {{fileCount}} </p>
+  <p>{{fileStart}}  to  {{fileStop}}</p>
+  <div class="row">
+  {{#each fileNames.data}}
+    <div class="col-md-4">
+      <div class="thumbnail">
+        <a href="/picture/motion/{{folder}}/{{name}}" target="_blank">
+          <img src="/picture/motion/{{folder}}/{{name}}" alt="Motion" style="width:100%">
+          <div class="caption">
+            <p>{{formatTimeTwc name}}</p>
+          </div>
+        </a>
+      </div>
+    </div>
+   {{/each}}
+  </div>
+</div>
+
+{{#section 'jquery'}}
+<script type="text/javascript">
+(function($){
+	$.getUrlVar = function(key){
+		var result = new RegExp(key + "=([^&]*)", "i").exec(window.location.search); 
+		return result && unescape(result[1]) || ""; 
+	};
+})(jQuery);
+
+ $(document).ready(function() {
+	 
+	console.log($.getUrlVar('index'));
+	 
+   $("#deleteAll").on( "click", function() {
+	   $.get( "clearPicture", function( data ) {
+
+           console.log(data);
+           location.reload();
+         });
+     
+    });
+  
+    $.each($('#navbarNav').find('li'), function() {
+        $(this).toggleClass('active',
+            '/' + $(this).find('a').attr('href') == window.location.pathname);
+    });
+    
+  });
+</script>
+{{/section}}
