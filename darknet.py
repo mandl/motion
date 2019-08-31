@@ -46,9 +46,6 @@ class METADATA(Structure):
     _fields_ = [("classes", c_int),
                 ("names", POINTER(c_char_p))]
 
-
-
-#lib = CDLL("/home/pjreddie/documents/darknet/libdarknet.so", RTLD_GLOBAL)
 lib = CDLL("./libdarknet.so", RTLD_GLOBAL)
 lib.network_width.argtypes = [c_void_p]
 lib.network_width.restype = c_int
@@ -118,7 +115,6 @@ predict_image = lib.network_predict_image
 predict_image.argtypes = [c_void_p, IMAGE]
 predict_image.restype = POINTER(c_float)
 
- 
 nnp_initialize = lib.nnp_initialize
 
 def convertBack(x, y, w, h):
@@ -137,7 +133,7 @@ def array_to_image(arr):
     im = IMAGE(w,h,c,data)
     return im, arr
 
-def detect(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
+def detect(net, meta, image, thresh=.2, hier_thresh=.33, nms=.45):
 
     #pr = cProfile.Profile()
     #pr.enable() 
