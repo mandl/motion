@@ -18,6 +18,7 @@ import glob
 from pathlib import Path
 import cv2
 import pyinotify
+import subprocess
 
 # load darknet
 mycfg = "cfg/yolov3.cfg".encode('utf8')
@@ -52,8 +53,6 @@ def process_generator(cls, method):
         doJob(event.pathname)
     _method_name.__name__ = "process_{}".format(method)
     setattr(cls, _method_name.__name__, _method_name)
-
-
 
 class ConfigData:
     def __init__(self):
@@ -100,9 +99,7 @@ class ConfigData:
 
 myData = ConfigData()
 
-
 def annotate_frame(frame, area, contour,offsetX,offsetY,cX,cY):
-
     (x, y, w, h) = cv2.boundingRect(contour)
     # show ROI
     #cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
@@ -166,8 +163,6 @@ def watchFolder(args):
     watch_manager.add_watch(watch_this, pyinotify.IN_CLOSE_WRITE)
     event_notifier.loop()
 
-
-
 def loopOverFiles(args):
     global myData
     readconfig()
@@ -180,6 +175,25 @@ def loopOverFiles(args):
     files.sort(key=os.path.getmtime)
     for name in files:
         doJob(name)
+
+def rectOverlap(A, B):
+    (Ax1,Ay1,Ax2,Ay2) = A
+    (Bx1,By1,Bx2,By2) = B
+    overlap = (Ax1 < Bx2) and (Ax2 > Bx1) and (Ay1 < By2) and (Ay2 > By1)
+    log.info("r1: {} r2: {}  overlap {}".format(r1,r2,overlap))
+    return  overlap
+    #(l1x,l1y,r1x,r1y) = r1
+    #(l2x,l2y,r2x,r2y) = r2
+    # If one rectangle is on left side of other
+    # if ((l1x > r2x) or (l2x > r1x)):
+    #    return False
+
+    # If one rectangle is above other
+    #if ((l1y < r2y) or (l2y < r1y)):
+    #    return False
+    #log.info("Overlap")
+    #return True
+
 
 def doJob(name):
     #draknet
@@ -239,6 +253,7 @@ def doJob(name):
         motion = False
         # save motion points
         motionPoints = ()
+        motionRects = ()
         for c in contours:
             # if the contour is too small, ignore it
             area =  cv2.contourArea(c)
@@ -251,6 +266,8 @@ def doJob(name):
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
             motionPoints += (cX,cY),
+            (x, y, w, h) = cv2.boundingRect(c)
+            motionRects += (myData.x + x, myData.y + y, myData.x+ x+ w, myData.y + y + h),
             # draw the text and timestamp on the frame
             if myData.enable_annotate:
                 frame = annotate_frame( frame, area, c, myData.x, myData.y,cX,cY)
@@ -269,13 +286,12 @@ def doJob(name):
                         #if isbw(frame):
                         #    log.info("bw image")
                         #    bwImageFound = True
-                        x, y, w, h = bounds
-                        cx1 = int(x - w / 2)
-                        cy1 = int(y - h / 2)
-                        cx2 = int(x + w / 2)
-                        cy2 = int(y + h / 2)
+                        (x, y, w, h) = bounds
+                        (cx1,cy1,cx2,cy2) = darknet.convertBack(x, y, w, h)
+                        darknetFound = True
                         for motionPoint in motionPoints:
-                            if ( cx1 <= motionPoint[0] <= cx2) and ( cy1 <= motionPoint[1] <= cy2):
+                            if False:
+                            #if ( cx1 <= motionPoint[0] <= cx2) and ( cy1 <= motionPoint[1] <= cy2):
                                 # point inside rect
                                 log.debug("Rect: {} {} {} {} Points {}".format(cx1,cy1,cx2,cy2,motionPoints))
                                 #cv2.rectangle(frame, (cx1, cy1), (cx2, cy2), (255, 0, 0), thickness=2)
@@ -283,7 +299,13 @@ def doJob(name):
                                 log.info("{} found {} with {:3.1f} % time {:3.4f}".format(args.cam,myThing,score * 100,darkTimeStop-darkTimeStart))
                                 darknetFound = True
                                 break
+
+                        for motionRect in motionRects:
+                            if rectOverlap(motionRect, (cx1,cy1,cx2,cy2)) == True:
+                                darknetFound = True
+                                cv2.putText(frame,str(foundThing.decode("utf-8")),(int(x),int(y)),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,0))
                         cv2.rectangle(frame, (cx1, cy1), (cx2, cy2), (255, 0, 0), thickness=2) 
+
             if darknetFound == True:
                 foundSomeThing = True
                 timestampNow =  time.perf_counter()
@@ -309,7 +331,11 @@ def doJob(name):
         #backup file
         backupFile = '/home/mandl/disk/video/backup/' + args.cam + "_" + os.path.basename(name)
         log.info("Backup file to {}".format(backupFile))
-        os.rename(name,backupFile)
+        #os.rename(name,backupFile)
+        process = subprocess.run(['/usr/bin/ffmpeg','-i',name,'-r','16','-filter:v','setpts=0.25*PTS',backupFile], check=True,stdout=subprocess.PIPE,universal_newlines=True)
+        #ffmpeg -i cam2_2019082718.mp4 -r 16 -filter:v "setpts=0.25*PTS" output.mp4
+        log.info(process.stdout)
+        os.remove(name)
     else:
         #remove file
         log.debug("Remove file {}".format(name))
