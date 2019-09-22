@@ -14,6 +14,8 @@ import fcntl
 import selectors
 import darknet
 import json
+import requests
+import threading
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import cv2
@@ -43,6 +45,7 @@ class ConfigData:
        
         self.w = 948
         self.h = 351
+        self.url =''
         
         self.startTime =datetime.datetime.now()
         
@@ -82,6 +85,7 @@ def start(args):
         myData.y = config[camName]['y']
         myData.w = config[camName]['w']
         myData.h = config[camName]['h']
+        myData.url = config['url']
         myData.update()
     camera = PiCamera()
     camera.resolution = args.resolution
@@ -106,7 +110,15 @@ def loop(args, camera):
             cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
             cv2.imwrite(myData.liveView_path, frame)
             myData.reloadView = False
-            
+            headers = {'Content-Type' : 'image/jpeg'}
+            data = open(myData.liveView_path,'rb').read()
+            try :
+                r = requests.post(myData.url,headers=headers,data=data)
+            except requests.ConnectionError as e:
+                log.error(e)
+            except:
+                log.error('Host offline')
+
         if myData.updateROI == True:
             log.info("Update ROI")
             frameRoiView = frame[myData.y1:myData.y2,myData.x1:myData.x2]
@@ -243,6 +255,12 @@ def parse_res(v):
     x, y = v.lower().split('x')
     return int(x), int(y)
 
+
+def sendPic():
+    threading.Timer(1.0 * 60 * 30, sendPic).start()
+    myData.reloadView = True
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Motion detect')
     parser.add_argument('--resolution', help='e.g 640x480', default=parse_res('1280x720'))
@@ -252,4 +270,5 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     log.debug(args)  
+    sendPic()
     start(args)
