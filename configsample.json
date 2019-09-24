@@ -1,0 +1,34 @@
+{
+    "CAM1": {
+        "h": 453,
+        "w": 538,
+        "x": 512,
+        "y": 354
+    },
+    "CAM2": {
+        "h": 382,
+        "w": 735,
+        "x": 411,
+        "y": 289
+    },
+    "CAM3": {
+        "h": 291,
+        "w": 506,
+        "x": 200,
+        "y": 161
+    },
+    "CAMPI": {
+        "h": 420,
+        "w": 545,
+        "x": 239,
+        "y": 279
+    },
+    "STREAMCAM1": "rtsp://admin:admin@192.168.178.33:8554/live2.264",
+    "STREAMCAM2": "rtsp://admin:admin@192.168.178.36:8554/live2.264",
+    "STREAMCAM3": "rtsp://admin:admin@192.168.178.31:8554/live2.264",
+    "piCam": true,
+    "usestreamCam1": false,
+    "usestreamCam2": false,
+    "usestreamCam3": false,
+    "url": "https://demo.com/folder"
+}
