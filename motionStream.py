@@ -180,7 +180,7 @@ def rectOverlap(A, B):
     (Ax1,Ay1,Ax2,Ay2) = A
     (Bx1,By1,Bx2,By2) = B
     overlap = (Ax1 < Bx2) and (Ax2 > Bx1) and (Ay1 < By2) and (Ay2 > By1)
-    log.info("r1: {} r2: {}  overlap {}".format(r1,r2,overlap))
+    log.info("r1: {} r2: {}  overlap {}".format(A,B,overlap))
     return  overlap
     #(l1x,l1y,r1x,r1y) = r1
     #(l2x,l2y,r2x,r2y) = r2
