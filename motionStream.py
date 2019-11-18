@@ -288,23 +288,12 @@ def doJob(name):
                         #    bwImageFound = True
                         (x, y, w, h) = bounds
                         (cx1,cy1,cx2,cy2) = darknet.convertBack(x, y, w, h)
-                        darknetFound = True
-                        for motionPoint in motionPoints:
-                            if False:
-                            #if ( cx1 <= motionPoint[0] <= cx2) and ( cy1 <= motionPoint[1] <= cy2):
-                                # point inside rect
-                                log.debug("Rect: {} {} {} {} Points {}".format(cx1,cy1,cx2,cy2,motionPoints))
-                                #cv2.rectangle(frame, (cx1, cy1), (cx2, cy2), (255, 0, 0), thickness=2)
-                                cv2.putText(frame,str(foundThing.decode("utf-8")),(int(x),int(y)),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,0))
-                                log.info("{} found {} with {:3.1f} % time {:3.4f}".format(args.cam,myThing,score * 100,darkTimeStop-darkTimeStart))
-                                darknetFound = True
-                                break
-
+                        #darknetFound = True
                         for motionRect in motionRects:
                             if rectOverlap(motionRect, (cx1,cy1,cx2,cy2)) == True:
                                 darknetFound = True
                                 cv2.putText(frame,str(foundThing.decode("utf-8")),(int(x),int(y)),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,0))
-                        cv2.rectangle(frame, (cx1, cy1), (cx2, cy2), (255, 0, 0), thickness=2) 
+                                cv2.rectangle(frame, (cx1, cy1), (cx2, cy2), (255, 0, 0), thickness=2) 
 
             if darknetFound == True:
                 foundSomeThing = True
