@@ -319,6 +319,7 @@ def doJob(name):
     if foundSomeThing == True:
         #backup file
         backupFile = '/home/mandl/disk/video/backup/' + args.cam + "_" + os.path.basename(name)
+        backupFile = backupFile.replace('.mp4','.webm')
         log.info("Backup file to {}".format(backupFile))
         #os.rename(name,backupFile)
         process = subprocess.run(['/usr/bin/ffmpeg','-i',name,'-r','16','-filter:v','setpts=0.25*PTS',backupFile], check=True,stdout=subprocess.PIPE,universal_newlines=True)

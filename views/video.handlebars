@@ -1,0 +1,30 @@
+<div class="container-fluid">
+<div class="btn-group-vertical">
+
+<p>Video</p>
+
+{{#each fileNames.data}}
+
+<div>
+   <video controls  preload="metadata">
+     <source src="/video/backup/{{name}}#t=1" type="video/webm">
+   </video>
+   <a href="videodelete?day={{name}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">Delete</a>
+</div>
+
+{{/each}}
+</div>
+</div>
+
+
+{{#section 'jquery'}}
+<script type="text/javascript">
+ $(document).ready(function() {
+    $.each($('#navbarNav').find('li'), function() {
+        $(this).toggleClass('active',
+            '/' + $(this).find('a').attr('href') == window.location.pathname);
+    });
+    
+  });
+</script>
+{{/section}}

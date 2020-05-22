@@ -196,6 +196,7 @@ app.get('/motion', function(req, res) {
 	}
 });
 
+
 // Clear all pictures
 app.get('/motiondelete', function(req, res) {
 
@@ -224,6 +225,29 @@ app.get('/motiondelete', function(req, res) {
 
 });
 
+// Clear video
+app.get('/videodelete', function(req, res) {
+
+        var day = req.query.day;
+        if (day !== null)
+        {
+         try {
+
+          if (fs.existsSync(path.join(__dirname,'..','disk','video','backup',day)))
+          {
+                  fs.unlinkSync(path.join(__dirname,'..','disk','video','backup',day))
+                  logger.info('Delete ' + day)
+                  res.redirect('/motion/videoview');
+          }
+         }
+         catch (ex){
+                logger.error(ex);
+         }
+        }
+
+});
+
+
 // render motion days page
 app.get('/motiondays', function(req, res) {
 
@@ -239,8 +263,29 @@ app.get('/motiondays', function(req, res) {
 	res.render('motiondays', { layout:'main', title: 'Days',fileNames:motionFiles});
 });
 
+
+// render motion days page
+app.get('/videoview', function(req, res) {
+
+        //var files = fs.readdirSync(path.join(__dirname,'picture','motion'));
+        var files = fs.readdirSync(path.join(__dirname,'..','disk','video','backup'));
+
+        var motionFiles = {"data":[]};
+        for( i in files)
+        {
+                var me = {"name":files[i]};
+                motionFiles.data.push(me);
+        }
+
+        // console.log(motionFiles);
+        res.render('video', { layout:'main', title: 'Video',fileNames:motionFiles});
+});
+
+
+
 // render motion days page
 app.get('/motiondaysdelete', function(req, res) {
+
 
         var files = fs.readdirSync(path.join(__dirname,'picture','motion'));
         var motionFiles = {"data":[]};
