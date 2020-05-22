@@ -1,68 +1,68 @@
 <div class="container-fluid">
-<p>Min area: {{area}}</p>
-<p>Threshold: {{threshold}}</p>
-<p>Log level: {{level}}</p>
+  <p>Min area: {{area}}</p>
+  <p>Threshold: {{threshold}}</p>
+  <p>Log level: {{level}}</p>
 
-<form id="admindata" action="/motion/admindata" method="post">
-  <div class="form-group">
-    <label for="id_area">Min area</label>
-    <select class="form-control" id="id_area" name="area">
-      <option>3000</option>
-      <option>4000</option>
-      <option>5000</option>
-    </select>
-  </div>
-  <div class="form-group">
-    <label for="id_threshold">Delta threshold motion</label>
-    <select class="form-control" id="id_threshold" name="threshold">
-      <option>4</option>
-      <option>5</option>
-      <option>6</option>
-      <option>7</option>
-      <option>8</option>
-    </select>
-  </div>
-  <div class="form-group">
-    <label for="id_level">Log level</label>
-    <select class="form-control" id="id_level" name="level">
-      <option>Info</option>
-      <option>Debug</option>
-    </select>
-  </div>
-  <div class="form-check">
-    <input type="checkbox" class="form-check-input" id="id_annotate" name="annotate">
-    <label class="form-check-label" for="id_annotate">Enable annotate</label>
-  </div>
-  <div class="form-group">
-    <label for="id_level">Detect level</label>
-    <select class="form-control" id="id_detect" name="detect">
-      <option>80</option>
-      <option>85</option>
-      <option>90</option>
-      <option>95</option>
-    </select>
-  </div>
-  <button type="submit" class="btn btn-primary" id="login" value="login">Submit</button>
-</form>   
+  <form id="admindata" action="/motion/admindata" method="post">
+    <div class="form-group">
+      <label for="id_area">Min area</label>
+      <select class="form-control" id="id_area" name="area">
+        <option>3000</option>
+        <option>4000</option>
+        <option>5000</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="id_threshold">Delta threshold motion</label>
+      <select class="form-control" id="id_threshold" name="threshold">
+        <option>4</option>
+        <option>5</option>
+        <option>6</option>
+        <option>7</option>
+        <option>8</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="id_level">Log level</label>
+      <select class="form-control" id="id_level" name="level">
+        <option>Info</option>
+        <option>Debug</option>
+      </select>
+    </div>
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="id_annotate" name="annotate">
+      <label class="form-check-label" for="id_annotate">Enable annotate</label>
+    </div>
+    <div class="form-group">
+      <label for="id_level">Detect level</label>
+      <select class="form-control" id="id_detect" name="detect">
+        <option>80</option>
+        <option>85</option>
+        <option>90</option>
+        <option>95</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary" id="login" value="login">Submit</button>
+  </form>
 </div>
 {{#section 'jquery'}}
 <script>
- $(document).ready(function() {
-	 
-	$('#id_area').focus();
- 	$('form').submit(function(e) {
-	console.log("ddd");
-	var subButton = $(this).find(':submit')
-       subButton.prop('disabled',true)
-	$.post("admin",$('#admindata').serialize());
-	subButton.val('...sending')
+  $(document).ready(function () {
+
+    $('#id_area').focus();
+    $('form').submit(function (e) {
+      console.log("ddd");
+      var subButton = $(this).find(':submit')
+      subButton.prop('disabled', true)
+      $.post("admin", $('#admindata').serialize());
+      subButton.val('...sending')
     });
-  
-    $.each($('#navbarNav').find('li'), function() {
-        $(this).toggleClass('active',
-            '/' + $(this).find('a').attr('href') == window.location.pathname);
-    }); 
-    
+
+    $.each($('#navbarNav').find('li'), function () {
+      $(this).toggleClass('active',
+        '/' + $(this).find('a').attr('href') == window.location.pathname);
+    });
+
   });
 </script>
 {{/section}}

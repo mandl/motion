@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018 Mandl
+    Copyright (C) 2018 - 2020 Mandl
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,33 +17,33 @@
 
 
 const { createLogger, format, transports } = require('winston');
-const { combine, timestamp, label, prettyPrint,printf } = format;
+const { combine, timestamp, label, prettyPrint, printf } = format;
 
 const path = require('path');
 
-const logFolder = path.join('/home','mandl','motion','motion.log');
+const logFolder = path.join('/home', 'mandl', 'motion', 'motion.log');
 
 const myFormat = printf(info => {
-	  return `${info.timestamp} ${info.level}: ${info.message}`;
-	});
+	return `${info.timestamp} ${info.level}: ${info.message}`;
+});
 
-var getLogFolder = function() {
+var getLogFolder = function () {
 	return logFolder;
 }
 
 const logger = createLogger({
-	  level: 'debug',
-	  format: combine(
-		        
-		        format.timestamp({
-		            format: 'YYYY-MM-DD HH:mm:ss'
-		        }),
-		        myFormat
-	  ),
-	  transports: [
-	 	    new transports.File({ filename: logFolder})
-	  ]
-	});
+	level: 'debug',
+	format: combine(
+
+		format.timestamp({
+			format: 'YYYY-MM-DD HH:mm:ss'
+		}),
+		myFormat
+	),
+	transports: [
+		new transports.File({ filename: logFolder })
+	]
+});
 
 
 exports.logfolder = getLogFolder;

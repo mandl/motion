@@ -1,21 +1,22 @@
 <div class="container-fluid">
-<div class="btn-group-vertical">
-<p>Days</p>
-{{#each fileNames.data}}
-  <a href="motion?day={{name}}&index=0" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">{{name}}</a>
-{{/each}}
-</div>
+  <div class="btn-group-vertical">
+    <p>Days</p>
+    {{#each fileNames.data}}
+    <a href="motion?day={{name}}&index=0" class="btn btn-primary btn-lg active" role="button"
+      aria-pressed="true">{{name}}</a>
+    {{/each}}
+  </div>
 </div>
 
 
 {{#section 'jquery'}}
 <script type="text/javascript">
- $(document).ready(function() {
-    $.each($('#navbarNav').find('li'), function() {
-        $(this).toggleClass('active',
-            '/' + $(this).find('a').attr('href') == window.location.pathname);
+  $(document).ready(function () {
+    $.each($('#navbarNav').find('li'), function () {
+      $(this).toggleClass('active',
+        '/' + $(this).find('a').attr('href') == window.location.pathname);
     });
-    
+
   });
 </script>
 {{/section}}
