@@ -1,5 +1,23 @@
 #!/usr/bin/env python3
-# 
+#
+
+"""
+    Copyright (C) 2018-2020 Mandl
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
 
 import logging
 logging.basicConfig(filename='/home/mandl/motion/motion.log',format='%(process)s    %(asctime)s %(message)s', level=logging.INFO)
@@ -167,7 +185,7 @@ def loopOverFiles(args):
     global myData
     readconfig()
     if myData.enable_test == True:
-        myMp4 = myData.videoTestPath / '*.mp4'
+        myMp4 = myData.videoTestPath / '*.webm'
     else:
         myMp4 = myData.rootPath / args.cam / '*.mp4'
     log.info("Loop over this folder {}".format(myMp4))
@@ -180,20 +198,8 @@ def rectOverlap(A, B):
     (Ax1,Ay1,Ax2,Ay2) = A
     (Bx1,By1,Bx2,By2) = B
     overlap = (Ax1 < Bx2) and (Ax2 > Bx1) and (Ay1 < By2) and (Ay2 > By1)
-    log.info("r1: {} r2: {}  overlap {}".format(A,B,overlap))
+    log.debug("r1: {} r2: {}  overlap {}".format(A,B,overlap))
     return  overlap
-    #(l1x,l1y,r1x,r1y) = r1
-    #(l2x,l2y,r2x,r2y) = r2
-    # If one rectangle is on left side of other
-    # if ((l1x > r2x) or (l2x > r1x)):
-    #    return False
-
-    # If one rectangle is above other
-    #if ((l1y < r2y) or (l2y < r1y)):
-    #    return False
-    #log.info("Overlap")
-    #return True
-
 
 def doJob(name):
     #draknet
@@ -213,6 +219,8 @@ def doJob(name):
     myData.reloadView = True
     myData.updateROI = True
     timestampLast = time.perf_counter()
+    timestampLastAction = 0
+    foundTimestamp=""
     while True:
         ret, frame = vcap.read()
         if ret==False:
@@ -299,6 +307,12 @@ def doJob(name):
                 foundSomeThing = True
                 timestampNow =  time.perf_counter()
                 timediff = timestampNow - timestampLast
+                timediffAction = vcap.get(cv2.CAP_PROP_POS_MSEC)
+                if timediffAction-timestampLastAction  > (45* 1000):
+                    log.info("Time mark {}".format((timediffAction/1000/60)))
+                    foundTimestamp= foundTimestamp + " " + str(timediffAction/1000/60)
+                    timestampLastAction = timediffAction
+
                 log.debug("Motion time {} ".format(timediff))
                 if timediff >= 1:
                     timestampLast = timestampNow
@@ -322,7 +336,8 @@ def doJob(name):
         backupFile = backupFile.replace('.mp4','.webm')
         log.info("Backup file to {}".format(backupFile))
         #os.rename(name,backupFile)
-        process = subprocess.run(['/usr/bin/ffmpeg','-i',name,'-r','16','-filter:v','setpts=0.25*PTS',backupFile], check=True,stdout=subprocess.PIPE,universal_newlines=True)
+        drawtext="setpts=0.25*PTS,drawtext=fontfile=/usr/share/fonts/truetype/freefont/FreeSans.ttf::fontcolor=white:fontsize=20:text="+ foundTimestamp 
+        process = subprocess.run(['/usr/bin/ffmpeg','-i',name,'-r','16','-vf',drawtext,backupFile], check=True,stdout=subprocess.PIPE,universal_newlines=True)
         #ffmpeg -i cam2_2019082718.mp4 -r 16 -filter:v "setpts=0.25*PTS" output.mp4
         log.info(process.stdout)
         os.remove(name)
