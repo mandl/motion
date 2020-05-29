@@ -22,11 +22,11 @@ import cv2
 
 
 # load darknet
-mycfg = "cfg/yolov3-tiny.cfg".encode('utf8')
-myweights = "yolov3-tiny.weights".encode('utf8')
-myCocoData = "cfg/coco.data"
-net = darknet.load_net(mycfg, myweights, 0)
-meta = darknet.load_meta(myCocoData.encode('utf8'))
+#mycfg = "cfg/yolov3-tiny.cfg".encode('utf8')
+#myweights = "yolov3-tiny.weights".encode('utf8')
+#myCocoData = "cfg/coco.data"
+#net = darknet.load_net(mycfg, myweights, 0)
+#meta = darknet.load_meta(myCocoData.encode('utf8'))
 
 # Camera name
 camName = "CAMPI"
@@ -64,8 +64,8 @@ class ConfigData:
 myData = ConfigData()
 
 def annotate_frame(frame, area, contour,offsetX,offsetY):
-    timestamp = datetime.datetime.now()
-    ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
+    #timestamp = datetime.datetime.now()
+    #ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
     (x, y, w, h) = cv2.boundingRect(contour)
     # show ROI
     #cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
@@ -73,7 +73,7 @@ def annotate_frame(frame, area, contour,offsetX,offsetY):
     # show motion
     cv2.rectangle(frame, ( offsetX + x, offsetY + y), (offsetX + x + w, offsetY + y + h), (255, 255, 255), 1)
     
-    #cv2.putText(frame, str(area), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+    #cv2.putText(frame, str(ts), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
     return frame
 
 
@@ -102,13 +102,17 @@ def loop(args, camera):
     myData.log()
     timestampLast =  time.perf_counter()
     #darknet.srand(2222222)
-    darknet.nnp_initialize() 
+    #darknet.nnp_initialize() 
     for f in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True):
         frame = f.array
         if myData.reloadView == True:
             log.info("Reload view")
-            cv2.rectangle(frame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
-            cv2.imwrite(myData.liveView_path, frame)
+            timestamp = datetime.datetime.now()
+            ts = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            newFrame = frame.copy()
+            cv2.rectangle(newFrame, ( myData.x, myData.y), (myData.x + myData.w, myData.y + myData.h), (255, 0, 0), 2)
+            cv2.putText(newFrame, str(ts), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            cv2.imwrite(myData.liveView_path, newFrame)
             myData.reloadView = False
             headers = {'Content-Type' : 'image/jpeg'}
             data = open(myData.liveView_path,'rb').read()
