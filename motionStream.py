@@ -309,8 +309,10 @@ def doJob(name):
                 timediff = timestampNow - timestampLast
                 timediffAction = vcap.get(cv2.CAP_PROP_POS_MSEC)
                 if timediffAction-timestampLastAction  > (45* 1000):
-                    log.info("Time mark {}".format((timediffAction/1000/60)))
-                    foundTimestamp= foundTimestamp + " " + str(timediffAction/1000/60)
+                    myMark = timediffAction/1000/60
+                    log.info("Time mark {}".format(myMark))
+                    myMarkMinute = round((((myMark*0.25) % 1) * 60) * 100) 
+                    foundTimestamp= foundTimestamp + " " + str(int(myMark *0.25))+"." + str(myMarkMinute)
                     timestampLastAction = timediffAction
 
                 log.debug("Motion time {} ".format(timediff))
@@ -336,8 +338,8 @@ def doJob(name):
         backupFile = backupFile.replace('.mp4','.webm')
         log.info("Backup file to {}".format(backupFile))
         #os.rename(name,backupFile)
-        drawtext="setpts=0.25*PTS,drawtext=fontfile=/usr/share/fonts/truetype/freefont/FreeSans.ttf::fontcolor=white:fontsize=20:text="+ foundTimestamp 
-        process = subprocess.run(['/usr/bin/ffmpeg','-i',name,'-r','16','-vf',drawtext,backupFile], check=True,stdout=subprocess.PIPE,universal_newlines=True)
+        drawtext="setpts=0.25*PTS,drawtext=fontfile=/usr/share/fonts/truetype/freefont/FreeSans.ttf::fontcolor=white:fontsize=20:text=" + foundTimestamp 
+        process = subprocess.run(['/usr/bin/ffmpeg','-i',name,'-codec:v','libvpx-vp9','-deadline','good','-cpu-used','2','-r','16','-vf',drawtext,backupFile], check=True,stdout=subprocess.PIPE,universal_newlines=True)
         #ffmpeg -i cam2_2019082718.mp4 -r 16 -filter:v "setpts=0.25*PTS" output.mp4
         log.info(process.stdout)
         os.remove(name)

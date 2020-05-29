@@ -1,12 +1,12 @@
 <div class="container-fluid">
-  <div class="btn-group-vertical">
-    <p>Video</p>
+  <div class="btn-group-vertical mr-2">
+    <h1>Video</h1>
     {{#each fileNames.data}}
     <div>
-      <video controls preload="metadata">
+      <video controls preload="metadata"  width="100%">
         <source src="/video/backup/{{name}}#t=1" type="video/webm">
       </video>
-      <a href="videodelete?day={{name}}" class="btn btn-primary btn-lg active" role="button"
+      <a href="videodelete?day={{name}}" class="btn btn-primary btn-lg active mb-4" role="button"
         aria-pressed="true">Delete</a>
     </div>
     {{/each}}
