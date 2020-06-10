@@ -33,7 +33,9 @@ class DETECTION(Structure):
                 ("prob", POINTER(c_float)),
                 ("mask", POINTER(c_float)),
                 ("objectness", c_float),
-                ("sort_class", c_int)]
+                ("sort_class", c_int),
+                ("uc", POINTER(c_float)),
+                ("points", c_int)]
 
 
 class IMAGE(Structure):
@@ -64,7 +66,7 @@ make_image.argtypes = [c_int, c_int, c_int]
 make_image.restype = IMAGE
 
 get_network_boxes = lib.get_network_boxes
-get_network_boxes.argtypes = [c_void_p, c_int, c_int, c_float, c_float, POINTER(c_int), c_int, POINTER(c_int)]
+get_network_boxes.argtypes = [c_void_p, c_int, c_int, c_float, c_float, POINTER(c_int), c_int, POINTER(c_int), c_int]
 get_network_boxes.restype = POINTER(DETECTION)
 
 make_network_boxes = lib.make_network_boxes
@@ -133,7 +135,7 @@ def array_to_image(arr):
     im = IMAGE(w,h,c,data)
     return im, arr
 
-def detect(net, meta, image, thresh=.2, hier_thresh=.33, nms=.45):
+def detect(net, meta, image, thresh=.5, hier_thresh=.33, nms=.45):
 
     #pr = cProfile.Profile()
     #pr.enable() 
@@ -144,8 +146,9 @@ def detect(net, meta, image, thresh=.2, hier_thresh=.33, nms=.45):
     darkTimeStart = time.perf_counter()
     predict_image(net, im)
     darkTimeStop = time.perf_counter()
+    letter_box = 0
     dets = get_network_boxes(net, im.w, im.h, thresh,
-                             hier_thresh, None, 0, pnum)
+                             hier_thresh, None, 0, pnum,letter_box)
     num = pnum[0]
     if (nms): do_nms_obj(dets, num, meta.classes, nms)
     #darkTimeStop = time.perf_counter()
