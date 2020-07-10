@@ -218,13 +218,12 @@ app.get('/motiondelete', function (req, res) {
 
 });
 
+
 // Clear video
 app.get('/videodelete', function (req, res) {
-
 	var day = req.query.day;
 	if (day !== null) {
 		try {
-
 			if (fs.existsSync(path.join(__dirname, '..', 'disk', 'video', 'backup', day))) {
 				fs.unlinkSync(path.join(__dirname, '..', 'disk', 'video', 'backup', day))
 				logger.info('Delete ' + day)
@@ -235,8 +234,32 @@ app.get('/videodelete', function (req, res) {
 			logger.error(ex);
 		}
 	}
+});
+
+// Clear all video files
+app.get('/videodeleteall', function (req, res) {
+
+    try {
+
+           directory = path.join(__dirname, '..', 'disk', 'video', 'backup');         
+           fs.readdir(directory, (err, files) => {
+           if (err) throw err;
+           for (const file of files) {
+               fs.unlink(path.join(directory, file), err => {
+               if (err) throw err;
+               });
+            }
+          });
+          logger.info('Delete alls videos');
+          res.redirect('/motion/videoview');
+         }
+    catch (ex)
+        {
+               logger.error(ex);
+        }
 
 });
+
 
 
 // render motion days page

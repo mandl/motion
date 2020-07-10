@@ -289,7 +289,7 @@ def doJob(name):
             #log.info(results)
             for foundThing, score, bounds in results:
                 myThing = foundThing.decode("utf-8")
-                if (myThing == "person" ) or (myThing== "car") or (myThing == "truck") or (myThing == "cat") or (myThing == "dog"):
+                if (myThing == "person" ) or (myThing== "car") or (myThing == "truck"):
                     if score > myData.darkScore:
                         #if isbw(frame):
                         #    log.info("bw image")
