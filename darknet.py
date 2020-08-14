@@ -30,8 +30,13 @@ class DETECTION(Structure):
                 ("prob", POINTER(c_float)),
                 ("mask", POINTER(c_float)),
                 ("objectness", c_float),
-                ("sort_class", c_int)]
-
+                ("sort_class", c_int),
+                ("uc", POINTER(c_float)),
+                ("points", c_int),
+                ("embeddings", POINTER(c_float)),
+                ("embedding_size", c_int),
+                ("sim", c_float),
+                ("track_id", c_int)]
 
 class IMAGE(Structure):
     _fields_ = [("w", c_int),
@@ -128,6 +133,27 @@ def array_to_image(arr):
     im = IMAGE(w,h,c,data)
     return im, arr
 
+def decode_detection(detections):
+    decoded = []
+    for label, confidence, bbox in detections:
+        confidence = str(round(confidence * 100, 2))
+        decoded.append((str(label), confidence, bbox))
+    return decoded
+
+
+def remove_negatives(detections, class_names, num):
+    """
+    Remove all classes with 0% confidence within the detection
+    """
+    predictions = []
+    for j in range(num):
+        for idx, name in enumerate(class_names):
+            if detections[j].prob[idx] > 0:
+                bbox = detections[j].bbox
+                bbox = (bbox.x, bbox.y, bbox.w, bbox.h)
+                predictions.append((name, detections[j].prob[idx], (bbox)))
+    return predictions
+
 def detect(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
     im, image = array_to_image(image)
     rgbgr_image(im)
@@ -135,7 +161,7 @@ def detect(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
     pnum = pointer(num)
     predict_image(net, im)
     dets = get_network_boxes(net, im.w, im.h, thresh,
-                             hier_thresh, None, 0, pnum)
+                             hier_thresh, None, 0, pnum,0)
     num = pnum[0]
     if nms: do_nms_obj(dets, num, meta.classes, nms)
 
