@@ -154,30 +154,21 @@ def remove_negatives(detections, class_names, num):
                 predictions.append((name, detections[j].prob[idx], (bbox)))
     return predictions
 
-def detect(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
+def detect(net, class_names, image, thresh=.5, hier_thresh=.5, nms=.45):
     im, image = array_to_image(image)
     rgbgr_image(im)
-    num = c_int(0)
-    pnum = pointer(num)
+
+    pnum = pointer(c_int(0))
     predict_image(net, im)
-    dets = get_network_boxes(net, im.w, im.h, thresh,
+    detections = get_network_boxes(net, im.w, im.h, thresh,
                              hier_thresh, None, 0, pnum,0)
     num = pnum[0]
-    if nms: do_nms_obj(dets, num, meta.classes, nms)
+    if nms: do_nms_obj(detections, num, len(class_names), nms)
 
-    res = []
-    for j in range(num):
-        a = dets[j].prob[0:meta.classes]
-        if any(a):
-            ai = np.array(a).nonzero()[0]
-            for i in ai:
-                b = dets[j].bbox
-                res.append((meta.names[i], dets[j].prob[i],
-                           (b.x, b.y, b.w, b.h)))
-
-    res = sorted(res, key=lambda x: -x[1])
+    predictions = remove_negatives(detections, class_names, num)
+    #predictions = decode_detection(predictions)
     if isinstance(image, bytes): free_image(im)
-    free_detections(dets, num)
-    return res
+    free_detections(detections, num)
+    return sorted(predictions, key=lambda x: x[1])
 
 

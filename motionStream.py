@@ -38,13 +38,14 @@ import cv2
 import pyinotify
 import subprocess
 
-# load darknet
-mycfg = "cfg/yolov3.cfg".encode('utf8')
-myweights = "cfg/yolov3.weights".encode('utf8')
+# load darknet yolov4
+
+mycfg = "cfg/yolov4.cfg".encode('utf8')
+myweights = "cfg/yolov4.weights".encode('utf8')
 myCocoData = "cfg/coco.data"
 net = darknet.load_net(mycfg, myweights, 0)
-meta = darknet.load_meta(myCocoData.encode('utf8'))
-
+metadata = darknet.load_meta(myCocoData.encode('utf8'))
+class_names = [metadata.names[i].decode("ascii") for i in range(metadata.classes)]
 
 class EventProcessor(pyinotify.ProcessEvent):
     _methods = ["IN_CREATE",
@@ -204,7 +205,7 @@ def rectOverlap(A, B):
 def doJob(name):
     #draknet
     global net
-    global meta
+    global class_names
 
     global myData
     doJobStart = time.perf_counter()
@@ -284,11 +285,11 @@ def doJob(name):
             darknetFound = False
             bwImageFound = False
             darkTimeStart = time.perf_counter()
-            results = darknet.detect(net, meta, frame)
+            results = darknet.detect(net, class_names, frame)
             darkTimeStop = time.perf_counter()
             #log.info(results)
             for foundThing, score, bounds in results:
-                myThing = foundThing.decode("utf-8")
+                myThing = foundThing
                 if (myThing == "person" ) or (myThing== "car") or (myThing == "truck"):
                     if score > myData.darkScore:
                         #if isbw(frame):
@@ -300,7 +301,7 @@ def doJob(name):
                         for motionRect in motionRects:
                             if rectOverlap(motionRect, (cx1,cy1,cx2,cy2)) == True:
                                 darknetFound = True
-                                cv2.putText(frame,str(foundThing.decode("utf-8")),(int(x),int(y)),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,0))
+                                cv2.putText(frame,foundThing,(int(x),int(y)),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,0))
                                 cv2.rectangle(frame, (cx1, cy1), (cx2, cy2), (255, 0, 0), thickness=2) 
 
             if darknetFound == True:
