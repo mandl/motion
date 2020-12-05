@@ -1,21 +1,21 @@
 <div class="container-fluid">
-    <button type="button" id="deleteAll" class="btn btn-outline-primary">Delete</button>
-    <h1>Log file</h1>
-    <p> {{{logdata}}} </p>	
+  <button type="button" id="deleteAll" class="btn btn-outline-primary">Delete</button>
+  <h1>Log file</h1>
+  <p> {{{logdata}}} </p>
 </div>
 {{#section 'jquery'}}
 <script>
- $(document).ready(function() {
-    $("#deleteAll").on( "click", function() {
-        $.get( "deleteLog", function( data ) {
-            location.reload();
-          });
-     });
-    $.each($('#navbarNav').find('li'), function() {
-        $(this).toggleClass('active',
-            '/' + $(this).find('a').attr('href') == window.location.pathname);
-    }); 
-    
+  $(document).ready(function () {
+    $("#deleteAll").on("click", function () {
+      $.get("deleteLog", function (data) {
+        location.reload();
+      });
+    });
+    $.each($('#navbarNav').find('li'), function () {
+      $(this).toggleClass('active',
+        '/' + $(this).find('a').attr('href') == window.location.pathname);
+    });
+
   });
 </script>
 {{/section}}
