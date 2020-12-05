@@ -1,5 +1,6 @@
 picture
 cfg/yolov3.weights
+cfg/yolov4.weights
 weights/
 __pycache__/*
 # Logs
