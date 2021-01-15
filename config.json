@@ -6,10 +6,10 @@
         "y": 0
     },
     "cam1": {
-        "h": 854,
-        "w": 946,
-        "x": 51,
-        "y": 95
+        "h": 730,
+        "w": 1132,
+        "x": 2,
+        "y": 223
     },
     "cam2": {
         "h": 799,
@@ -30,7 +30,7 @@
         "y": 481
     },
     "videoPath": "/home/mandl/disk/video",
-    "videoTestPath":"/home/mandl/disk/video/backup",
+    "videoTestPath": "/home/mandl/disk/video/backup",
     "level": null,
     "threshold": 4,
     "area": 3000,

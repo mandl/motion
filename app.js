@@ -1,20 +1,20 @@
 /*
-    Heizung
+	Heizung
 
-    Copyright (C) 2018-2019 Mandl
+	Copyright (C) 2018-2021 Mandl
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 const fs = require('fs');
@@ -239,24 +239,23 @@ app.get('/videodelete', function (req, res) {
 // Clear all video files
 app.get('/videodeleteall', function (req, res) {
 
-    try {
+	try {
 
-           directory = path.join(__dirname, '..', 'disk', 'video', 'backup');         
-           fs.readdir(directory, (err, files) => {
-           if (err) throw err;
-           for (const file of files) {
-               fs.unlink(path.join(directory, file), err => {
-               if (err) throw err;
-               });
-            }
-          });
-          logger.info('Delete alls videos');
-          res.redirect('/motion/videoview');
-         }
-    catch (ex)
-        {
-               logger.error(ex);
-        }
+		directory = path.join(__dirname, '..', 'disk', 'video', 'backup');
+		fs.readdir(directory, (err, files) => {
+			if (err) throw err;
+			for (const file of files) {
+				fs.unlink(path.join(directory, file), err => {
+					if (err) throw err;
+				});
+			}
+		});
+		logger.info('Delete alls videos');
+		res.redirect('/motion/videoview');
+	}
+	catch (ex) {
+		logger.error(ex);
+	}
 
 });
 

@@ -30,7 +30,7 @@
     "mathjs": "^6.6.5",
     "morgan": "^1.10.0",
     "node-onvif": "^0.1.7",
-    "onvif": "^0.6.2",
+    "onvif": "^0.6.4",
     "onvif-nvt": "^0.2.25",
     "opencv4nodejs": "^5.6.0",
     "request": "^2.88.2",
