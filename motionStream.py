@@ -340,7 +340,7 @@ def doJob(name):
         log.info("Backup file to {}".format(backupFile))
         #os.rename(name,backupFile)
         drawtext="setpts=0.25*PTS,drawtext=fontfile=/usr/share/fonts/truetype/freefont/FreeSans.ttf::fontcolor=white:fontsize=20:text=" + foundTimestamp 
-        process = subprocess.run(['/usr/bin/ffmpeg','-i',name,'-codec:v','libvpx-vp9','-deadline','good','-cpu-used','2','-r','16','-vf',drawtext,backupFile], check=True,stdout=subprocess.PIPE,universal_newlines=True)
+        process = subprocess.run(['/usr/bin/ffmpeg','-hide_banner','-loglevel','quiet','-i',name,'-codec:v','libvpx-vp9','-deadline','good','-cpu-used','2','-r','16','-vf',drawtext,backupFile], check=True,stdout=subprocess.PIPE,universal_newlines=True)
         #ffmpeg -i cam2_2019082718.mp4 -r 16 -filter:v "setpts=0.25*PTS" output.mp4
         log.info(process.stdout)
         os.remove(name)

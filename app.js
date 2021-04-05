@@ -59,7 +59,7 @@ app.disable('x-powered-by');
 
 // Use application-level middleware for common functionality, including
 // logging, parsing, and session handling.
-app.use(require('morgan')('dev'));
+//app.use(require('morgan')('dev'));
 app.use(require('cookie-parser')());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(require('express-session')({
