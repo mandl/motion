@@ -37,6 +37,7 @@ from pathlib import Path
 import cv2
 import pyinotify
 import subprocess
+import shutil
 
 # load darknet yolov4
 
@@ -338,16 +339,14 @@ def doJob(name):
         backupFile = '/home/mandl/disk/video/backup/' + args.cam + "_" + os.path.basename(name)
         backupFile = backupFile.replace('.mp4','.webm')
         log.info("Backup file to {}".format(backupFile))
-        #os.rename(name,backupFile)
         drawtext="setpts=0.25*PTS,drawtext=fontfile=/usr/share/fonts/truetype/freefont/FreeSans.ttf::fontcolor=white:fontsize=20:text=" + foundTimestamp 
         process = subprocess.run(['/usr/bin/ffmpeg','-hide_banner','-loglevel','quiet','-i',name,'-codec:v','libvpx-vp9','-deadline','good','-cpu-used','2','-r','16','-vf',drawtext,backupFile], check=True,stdout=subprocess.PIPE,universal_newlines=True)
-        #ffmpeg -i cam2_2019082718.mp4 -r 16 -filter:v "setpts=0.25*PTS" output.mp4
         log.info(process.stdout)
         os.remove(name)
     else:
-        #remove file
-        log.debug("Remove file {}".format(name))
-        os.remove(name)
+        #move file
+        log.debug("Move file {} to archive".format(name))
+        shutil.move(name,'/home/mandl/disk/video/videoArchive/' + args.cam + "_" + os.path.basename(name))
     doJobStop = time.perf_counter()
     log.debug("File {} Runtime {:.2f} min for {}".format(name, (doJobStop - doJobStart)/ 60, myData.camName))
 
@@ -355,7 +354,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Motion detect')
     parser.add_argument('--cam', help='Foldername  with mp4 recordings', default='cam1')
     parser.add_argument('--delta-threshold', default=int(10))
-    parser.add_argument('--enable-annotate', help='Draw detected regions to image', action='store_true', default=True)
+    parser.add_argument('--enable-annotate', help='Draw detected regions to image', action='store_true', default=False)
     parser.add_argument('--enable-watch', help='Watch folder', action='store_true', default=False)
     parser.add_argument('--enable-test', help='Use the test folder', action='store_true', default=False)
     parser.add_argument('--min-area', default=int(5000))
